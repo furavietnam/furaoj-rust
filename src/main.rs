@@ -68,7 +68,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = create_router(state);
 
     let http_addr = format!("{}:{}", config.server.host, config.server.port);
-    info!("Axum REST API listening on http://{}", http_addr);
+    let proto = "http";
+    info!("Axum REST API listening on {}://{}", proto, http_addr);
 
     let listener = tokio::net::TcpListener::bind(&http_addr).await?;
     axum::serve(listener, app).await?;

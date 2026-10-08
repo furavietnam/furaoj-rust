@@ -30,9 +30,10 @@ impl DatabaseConfig {
     // Input: &self reference containing host, port, credentials, and database name.
     // Output: Formatted PostgreSQL connection string.
     pub fn connection_string(&self) -> String {
+        let scheme = "postgres";
         format!(
-            "postgres://{}:{}@{}:{}/{}",
-            self.user, self.password, self.host, self.port, self.name
+            "{}://{}:{}@{}:{}/{}",
+            scheme, self.user, self.password, self.host, self.port, self.name
         )
     }
 }
