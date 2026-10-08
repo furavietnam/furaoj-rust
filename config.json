@@ -1,0 +1,36 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "jwt_secret": "furaoj_default_production_jwt_secret_key_please_change",
+    "jwt_expiration_hours": 168
+  },
+  "database": {
+    "host": "localhost",
+    "port": 5432,
+    "name": "furaoj",
+    "user": "furaoj",
+    "password": "furaoj_secure_password",
+    "max_connections": 25,
+    "idle_timeout_seconds": 30
+  },
+  "redis": {
+    "url": "redis://localhost:6379",
+    "default_ttl_seconds": 300
+  },
+  "bridge": {
+    "listen_host": "0.0.0.0",
+    "listen_port": 9999,
+    "max_packet_size_bytes": 67108864
+  },
+  "site": {
+    "name": "FuraOJ",
+    "long_name": "Fura Online Judge",
+    "ssl_mode": 1,
+    "registration_enabled": true
+  },
+  "storage": {
+    "problems_dir": "/var/furaoj/problems",
+    "media_dir": "/var/furaoj/media"
+  }
+}
