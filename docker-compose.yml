@@ -1,0 +1,90 @@
+services:
+  db:
+    image: postgres:16.4-bookworm
+    container_name: furaoj_db
+    restart: always
+    environment:
+      POSTGRES_DB: furaoj
+      POSTGRES_USER: furaoj
+      POSTGRES_PASSWORD: furaoj_secure_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U furaoj -d furaoj"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7.4-bookworm
+    container_name: furaoj_redis
+    restart: always
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: furaoj_backend
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./local_settings.json:/app/local_settings.json:ro
+      - problem_data:/var/furaoj/problems:ro
+      - media_uploads:/var/furaoj/media:rw
+    ports:
+      - "8080:8080"
+      - "9999:9999"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8080/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: furaoj_frontend
+    restart: always
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "3000:80"
+
+  judge:
+    build:
+      context: ../furaoj-judgeserver-rust
+      dockerfile: Dockerfile
+    container_name: furaoj_judge
+    restart: always
+    privileged: true
+    cap_add:
+      - SYS_ADMIN
+      - SETUID
+      - SETGID
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./judge_config.json:/app/judge_config.json:ro
+      - problem_data:/var/furaoj/problems:ro
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+
+volumes:
+  postgres_data:
+  redis_data:
+  problem_data:
+  media_uploads:
