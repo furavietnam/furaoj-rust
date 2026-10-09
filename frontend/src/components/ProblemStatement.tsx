@@ -51,22 +51,22 @@ export function ProblemStatement({ content }: ProblemStatementProps): JSX.Elemen
           },
           pre: ({ children }) => <div className="not-prose">{children}</div>,
           blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-blue-500 pl-4 py-1 italic text-zinc-400 my-4 bg-zinc-900/40 rounded-r">
+            <blockquote className="border-l-4 border-blue-500 pl-4 py-1 italic text-zinc-700 dark:text-zinc-300 my-4 bg-zinc-100/70 dark:bg-zinc-900/40 rounded-r">
               {children}
             </blockquote>
           ),
           table: ({ children }) => (
-            <div className="overflow-x-auto my-4 rounded border border-zinc-800">
+            <div className="overflow-x-auto my-4 rounded border border-zinc-300 dark:border-zinc-800">
               <table className="w-full text-left text-sm border-collapse">{children}</table>
             </div>
           ),
           th: ({ children }) => (
-            <th className="bg-zinc-800/80 px-4 py-2 font-semibold text-zinc-200 border-b border-zinc-700">
+            <th className="bg-zinc-100 dark:bg-zinc-800/80 px-4 py-2 font-semibold text-zinc-900 dark:text-zinc-200 border-b border-zinc-300 dark:border-zinc-700">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="px-4 py-2 text-zinc-300 border-b border-zinc-800/60">{children}</td>
+            <td className="px-4 py-2 text-zinc-900 dark:text-zinc-300 border-b border-zinc-200 dark:border-zinc-800/60">{children}</td>
           ),
         }}
       >

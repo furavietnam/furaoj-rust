@@ -1,6 +1,6 @@
-// Logic: Authentic DMOJ / FuraOJ problem detail interface matching oj.fura.io.vn/problem/{code}.
+// Logic: Authentic DMOJ / FuraOJ problem detail interface matching oj.fura.io.vn/problem/{code} with PDF export bridge and KaTeX typesetting.
 // Input: Problem code slug from URL, active source code edits, language selection, and submit modal state.
-// Output: Two-column problem detail with statement KaTeX rendering, info sidebar metadata, comments area, and submit modal.
+// Output: Two-column problem detail with statement KaTeX rendering, info sidebar metadata, comments area, submit modal, and printable raw problem iframe.
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
@@ -51,6 +51,22 @@ export function ProblemDetailPage(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [latestSubmission, setLatestSubmission] = useState<any>(null);
   const [submitModalOpen, setSubmitModalOpen] = useState<boolean>(false);
+  const iframeRef = React.useRef<HTMLIFrameElement>(null);
+
+  const handleViewPdf = (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const iframe = iframeRef.current;
+      if (iframe && iframe.contentWindow) {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        return;
+      }
+    } catch (err) {
+      console.warn('Iframe print error, falling back to window.print():', err);
+    }
+    window.print();
+  };
 
   useEffect(() => {
     async function load() {
@@ -120,7 +136,13 @@ export function ProblemDetailPage(): JSX.Element {
           [{problem.code}] - {problem.name}
         </h2>
         <span className="spacer"></span>
-        <a id="pdf_button" className="view-pdf" href="#" onClick={(e) => e.preventDefault()}>
+        <a
+          id="pdf_button"
+          className="view-pdf"
+          href={`/problem/${problem.code}/raw`}
+          onClick={handleViewPdf}
+          title="Xem hoặc In dạng PDF"
+        >
           <span className="pdf-icon">
             <span className="fa fa-file-pdf-o pdf-icon-logo"></span>
             <span className="pdf-icon-bar"></span>
@@ -134,6 +156,17 @@ export function ProblemDetailPage(): JSX.Element {
         <div id="common-content" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
           {/* Left Column: Problem statement & submission box */}
           <div id="content-left" className="split-common-content" style={{ flex: 1, minWidth: 0 }}>
+            {/* Print-only limits summary header */}
+            <div className="print-only" style={{ marginBottom: '16px' }}>
+              <div style={{ textAlign: 'center', marginBottom: '10px', display: 'flex', justifyContent: 'center', gap: '20px', flexWrap: 'wrap' }}>
+                <span><b>Thời gian giới hạn:</b> {problem.time_limit}s</span>
+                <span><b>Bộ nhớ giới hạn:</b> {problem.memory_limit}M</span>
+                <span><b>Điểm:</b> {problem.points ? problem.points.toFixed(2) : '100.00'} (OI)</span>
+                <span><b>Đầu vào / Đầu ra:</b> stdin / stdout</span>
+              </div>
+              <hr style={{ border: 'none', borderTop: '1px solid #ccc', margin: '8px 0 16px' }} />
+            </div>
+
             {/* Statement card */}
             <div className="content content-description screen" style={{ marginBottom: '24px' }}>
               <ProblemStatement content={problem.description} />
@@ -387,6 +420,22 @@ export function ProblemDetailPage(): JSX.Element {
           </div>
         </div>
       )}
+      {/* Hidden iframe loading raw problem view for native printing */}
+      <iframe
+        ref={iframeRef}
+        id="raw_problem"
+        name="raw_problem"
+        src={`/problem/${problem.code}/raw`}
+        style={{
+          visibility: 'hidden',
+          width: 0,
+          height: 0,
+          position: 'absolute',
+          left: '-999em',
+          border: 'none',
+        }}
+        title="Raw Problem View"
+      />
     </>
   );
 }
