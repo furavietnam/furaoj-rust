@@ -1,8 +1,11 @@
+// Logic: Authentic DMOJ / FuraOJ user profile dashboard matching templates/user/user-about.html.
+// Input: URL parameter username, user profile and submissions data from REST API.
+// Output: JSX.Element user profile layout with .user-sidebar card, stats list, and .user-content cards.
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { User, Submission } from '../types';
 import { fetchUser, fetchSubmissions } from '../services/api';
-import { VerdictBadge } from '../components/VerdictBadge';
 
 const DEFAULT_PROFILE: User = {
   id: 1,
@@ -17,23 +20,19 @@ const DEFAULT_PROFILE: User = {
 };
 
 const RATING_HISTORY = [
-  { contest: 'Round 1', rating: 1500, date: 'Jan 2024' },
-  { contest: 'Round 2', rating: 1680, date: 'Feb 2024' },
-  { contest: 'Round 3', rating: 1820, date: 'Mar 2024' },
-  { contest: 'Round 4', rating: 2050, date: 'Apr 2024' },
-  { contest: 'Round 5', rating: 2210, date: 'May 2024' },
-  { contest: 'Round 6', rating: 2450, date: 'Jun 2024' },
+  { contest: 'Round 1', rating: 1500, date: '01/2026' },
+  { contest: 'Round 2', rating: 1680, date: '02/2026' },
+  { contest: 'Round 3', rating: 1820, date: '03/2026' },
+  { contest: 'Round 4', rating: 2050, date: '04/2026' },
+  { contest: 'Round 5', rating: 2210, date: '05/2026' },
+  { contest: 'Round 6', rating: 2450, date: '06/2026' },
 ];
 
-/**
- * Logic: User public profile view with rating tier analytics, interactive SVG rating chart, and submission history.
- * Input: None (URL parameter: `username`).
- * Output: JSX.Element user profile dashboard.
- */
 export function UserProfilePage(): JSX.Element {
   const { username = 'admin' } = useParams<{ username: string }>();
   const [profile, setProfile] = useState<User>(DEFAULT_PROFILE);
   const [userSubmissions, setUserSubmissions] = useState<Submission[]>([]);
+  const [activeTab, setActiveTab] = useState<'about' | 'stats' | 'submissions'>('about');
 
   useEffect(() => {
     async function load() {
@@ -58,15 +57,15 @@ export function UserProfilePage(): JSX.Element {
     load();
   }, [username]);
 
-  // Compute SVG rating chart points
+  // SVG rating chart coordinates
   const minRating = 1400;
   const maxRating = 2600;
   const chartWidth = 600;
-  const chartHeight = 180;
+  const chartHeight = 160;
   const paddingX = 40;
   const paddingY = 20;
 
-  const points = RATING_HISTORY.map((pt, i) => {
+  const chartPoints = RATING_HISTORY.map((pt, i) => {
     const x = paddingX + (i / (RATING_HISTORY.length - 1)) * (chartWidth - 2 * paddingX);
     const y =
       chartHeight -
@@ -75,146 +74,309 @@ export function UserProfilePage(): JSX.Element {
     return { x, y, ...pt };
   });
 
-  const pathD = points.reduce((acc, curr, idx) => {
+  const pathD = chartPoints.reduce((acc, curr, idx) => {
     return idx === 0 ? `M ${curr.x} ${curr.y}` : `${acc} L ${curr.x} ${curr.y}`;
   }, '');
 
   return (
-    <div className="space-y-8">
-      {/* Profile Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 sm:p-8">
-        <div className="flex items-center gap-5">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-3xl font-black font-mono text-white shadow-xl shadow-blue-600/30">
-            {profile.username.slice(0, 1).toUpperCase()}
+    <>
+      <div className="problem-list-header">
+        <div className="problem-header-left">
+          <div className="problem-header-icon">
+            <i className="fa fa-user"></i>
           </div>
+          <div className="problem-header-title-block">
+            <h1 className="problem-header-title">{profile.username}</h1>
+            <span className="problem-header-subtitle">
+              <span style={{ fontWeight: 600, color: '#64748b' }}>@{profile.username}</span> &bull;{' '}
+              Tham gia từ Tháng 1, 2026
+            </span>
+          </div>
+        </div>
+        <div className="problem-header-actions">
+          <div className="header-segmented-control">
+            <button
+              onClick={() => setActiveTab('about')}
+              className={`seg-btn ${activeTab === 'about' ? 'active' : ''}`}
+            >
+              <i className="fa fa-info-circle"></i> <span>Giới thiệu</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('stats')}
+              className={`seg-btn ${activeTab === 'stats' ? 'active' : ''}`}
+            >
+              <i className="fa fa-bar-chart"></i> <span>Thống kê</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('submissions')}
+              className={`seg-btn ${activeTab === 'submissions' ? 'active' : ''}`}
+            >
+              <i className="fa fa-list-alt"></i> <span>Bài nộp</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
-          <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold tracking-tight text-white font-mono">
-                {profile.username}
-              </h1>
-              {profile.is_superuser && (
-                <span className="rounded bg-rose-950/60 border border-rose-800/40 px-2 py-0.5 text-xs font-mono font-semibold text-rose-400">
-                  Platform Admin
+      <div id="content-body">
+        <div className="user-info-page" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          {/* User Sidebar */}
+          <aside className="user-sidebar" style={{ width: '280px', flexShrink: 0 }}>
+            <div className="user-profile-card sidebox" style={{ padding: '24px', borderRadius: '16px' }}>
+              <div
+                className="user-avatar-wrapper"
+                style={{
+                  width: '96px',
+                  height: '96px',
+                  borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #0066ff 0%, #38bdf8 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px auto',
+                  color: '#ffffff',
+                  fontSize: '38px',
+                  fontWeight: 800,
+                  boxShadow: '0 8px 24px -4px rgba(0, 102, 255, 0.35)',
+                }}
+              >
+                {profile.username.slice(0, 1).toUpperCase()}
+              </div>
+
+              <div className="user-identity" style={{ textAlign: 'center', marginBottom: '20px' }}>
+                <h2 className="user-name-title" style={{ margin: '0 0 4px 0', fontSize: '20px', fontWeight: 800 }}>
+                  {profile.username}
+                </h2>
+                <span className="user-username-handle" style={{ fontSize: '13px', color: '#64748b' }}>
+                  @{profile.username}
                 </span>
-              )}
-            </div>
-            <p className="mt-1 text-sm text-zinc-400 font-mono">{profile.email}</p>
-            <div className="mt-2 text-xs text-zinc-500 font-mono">
-              Member since {new Date(profile.date_joined || '2024-01-01').toLocaleDateString()}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-3 gap-4 border-t border-zinc-800 pt-4 sm:border-t-0 sm:pt-0 font-mono text-center">
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
-            <div className="text-xs text-zinc-500 uppercase">Rating</div>
-            <div className="text-2xl font-bold text-rose-400">{profile.rating || 2450}</div>
-          </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
-            <div className="text-xs text-zinc-500 uppercase">Points</div>
-            <div className="text-2xl font-bold text-emerald-400">{profile.points || 6200}</div>
-          </div>
-          <div className="rounded-xl border border-zinc-800 bg-zinc-950/60 p-4">
-            <div className="text-xs text-zinc-500 uppercase">Solved</div>
-            <div className="text-2xl font-bold text-blue-400">{profile.solved_count || 190}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Interactive SVG Rating Graph */}
-      <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-zinc-100">Contest Rating Trajectory</h2>
-          <span className="font-mono text-xs text-zinc-400">Peak Rating: 2,450 (Grandmaster)</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} className="w-full h-48 select-none">
-            {/* Grid Lines */}
-            <line x1={paddingX} y1={paddingY} x2={chartWidth - paddingX} y2={paddingY} stroke="#27272a" strokeDasharray="4 4" />
-            <line x1={paddingX} y1={chartHeight / 2} x2={chartWidth - paddingX} y2={chartHeight / 2} stroke="#27272a" strokeDasharray="4 4" />
-            <line x1={paddingX} y1={chartHeight - paddingY} x2={chartWidth - paddingX} y2={chartHeight - paddingY} stroke="#27272a" />
-
-            {/* Area Fill */}
-            <path
-              d={`${pathD} L ${points[points.length - 1].x} ${chartHeight - paddingY} L ${points[0].x} ${chartHeight - paddingY} Z`}
-              fill="url(#rating-gradient)"
-              opacity="0.2"
-            />
-
-            <defs>
-              <linearGradient id="rating-gradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-
-            {/* Line Path */}
-            <path d={pathD} fill="none" stroke="#3b82f6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-
-            {/* Data Points */}
-            {points.map((pt, i) => (
-              <g key={i}>
-                <circle cx={pt.x} cy={pt.y} r="5" fill="#1d4ed8" stroke="#60a5fa" strokeWidth="2" />
-                <text x={pt.x} y={pt.y - 10} fill="#93c5fd" fontSize="10" textAnchor="middle" fontFamily="monospace">
-                  {pt.rating}
-                </text>
-                <text x={pt.x} y={chartHeight - 4} fill="#71717a" fontSize="9" textAnchor="middle" fontFamily="sans-serif">
-                  {pt.date}
-                </text>
-              </g>
-            ))}
-          </svg>
-        </div>
-      </div>
-
-      {/* Recent Submissions */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-zinc-100">Recent Submissions</h2>
-        <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-md">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-800 bg-zinc-950/80 font-mono text-xs uppercase text-zinc-400">
-              <tr>
-                <th className="px-6 py-3">#ID</th>
-                <th className="px-6 py-3">Problem</th>
-                <th className="px-6 py-3 text-center">Language</th>
-                <th className="px-6 py-3 text-center">Verdict</th>
-                <th className="px-6 py-3 text-center">Score</th>
-                <th className="px-6 py-3 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/60">
-              {(userSubmissions.length > 0 ? userSubmissions : [
-                { id: 1042, problem_code: 'aplusb', problem_title: 'A + B Problem', language: 'cpp', verdict: 'AC', score: 100 },
-                { id: 1039, problem_code: 'knapsack', problem_title: '0/1 Knapsack Problem', language: 'cpp', verdict: 'WA', score: 40 },
-              ]).map((s) => (
-                <tr key={s.id} className="transition hover:bg-zinc-800/40">
-                  <td className="px-6 py-3 font-mono text-xs text-zinc-400">#{s.id}</td>
-                  <td className="px-6 py-3 font-medium text-zinc-200">
-                    <Link to={`/problem/${s.problem_code || 'aplusb'}`} className="text-blue-400 hover:underline">
-                      {s.problem_code || 'aplusb'}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-3 text-center font-mono text-xs uppercase text-zinc-400">{s.language}</td>
-                  <td className="px-6 py-3 text-center">
-                    <VerdictBadge verdict={s.verdict || s.result || 'AC'} size="sm" />
-                  </td>
-                  <td className="px-6 py-3 text-center font-mono text-xs text-zinc-200">{s.score ?? 0}</td>
-                  <td className="px-6 py-3 text-right">
-                    <Link
-                      to={`/submission/${s.id}`}
-                      className="rounded bg-zinc-800 px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700"
+                {profile.is_superuser && (
+                  <div style={{ marginTop: '8px' }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '3px 10px',
+                        borderRadius: '20px',
+                        background: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        fontWeight: 700,
+                        fontSize: '11px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
+                      }}
                     >
-                      View &rarr;
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                      <i className="fa fa-shield"></i> Quản trị viên
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="user-stats-list" style={{ borderTop: '1px solid #edf2f7', paddingTop: '16px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div className="user-stat-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                  <span className="stat-label" style={{ color: '#64748b' }}>
+                    <i className="fa fa-envelope-o" style={{ marginRight: '6px' }}></i> Email:
+                  </span>
+                  <span className="stat-value email-val font-mono" style={{ fontWeight: 600 }}>
+                    {profile.email}
+                  </span>
+                </div>
+
+                <div className="user-stat-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                  <span className="stat-label" style={{ color: '#64748b' }}>
+                    <i className="fa fa-check-circle-o" style={{ marginRight: '6px', color: '#10b981' }}></i> Bài đã giải:
+                  </span>
+                  <span className="stat-value highlight-val font-mono" style={{ fontWeight: 700, color: '#10b981' }}>
+                    {profile.solved_count ?? 190}
+                  </span>
+                </div>
+
+                <div className="user-stat-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                  <span className="stat-label" style={{ color: '#64748b' }}>
+                    <i className="fa fa-trophy" style={{ marginRight: '6px', color: '#f59e0b' }}></i> Hạng theo điểm:
+                  </span>
+                  <span className="stat-value font-mono" style={{ fontWeight: 700 }}>
+                    #1
+                  </span>
+                </div>
+
+                <div className="user-stat-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                  <span className="stat-label" style={{ color: '#64748b' }}>
+                    <i className="fa fa-star-o" style={{ marginRight: '6px', color: '#0066ff' }}></i> Tổng điểm:
+                  </span>
+                  <span className="stat-value font-mono" style={{ fontWeight: 700, color: '#0066ff' }}>
+                    {(profile.points ?? 6200).toFixed(0)}
+                  </span>
+                </div>
+
+                <div className="user-stat-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                  <span className="stat-label" style={{ color: '#64748b' }}>
+                    <i className="fa fa-bolt" style={{ marginRight: '6px', color: '#ec4899' }}></i> Điểm đánh giá:
+                  </span>
+                  <span className="stat-value rating-val font-mono" style={{ fontWeight: 800, color: '#ec4899' }}>
+                    {profile.rating ?? 2450}
+                  </span>
+                </div>
+              </div>
+
+              <div className="user-actions-area" style={{ marginTop: '20px', borderTop: '1px solid #edf2f7', paddingTop: '16px' }}>
+                <Link
+                  to={`/submissions?user=${profile.username}`}
+                  className="unselectable button full"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '10px 16px',
+                    borderRadius: '8px',
+                    background: '#0066ff',
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                  }}
+                >
+                  <i className="fa fa-list-alt"></i> Xem bài nộp
+                </Link>
+              </div>
+            </div>
+          </aside>
+
+          {/* User Content Sections */}
+          <section className="user-content" style={{ flex: 1, minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            {activeTab === 'about' && (
+              <>
+                <div className="user-card user-about-card sidebox" style={{ padding: '24px', borderRadius: '16px' }}>
+                  <div className="user-card-header" style={{ marginBottom: '16px' }}>
+                    <h3 className="user-card-title" style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>
+                      <i className="fa fa-info-circle" style={{ marginRight: '8px', color: '#0066ff' }}></i> Giới thiệu
+                    </h3>
+                  </div>
+                  <div className="user-card-body">
+                    <div className="user-empty-state" style={{ textAlign: 'center', padding: '32px 16px' }}>
+                      <div className="empty-icon-wrap" style={{ fontSize: '32px', color: '#94a3b8', marginBottom: '12px' }}>
+                        <i className="fa fa-code"></i>
+                      </div>
+                      <p className="empty-text" style={{ color: '#64748b', fontSize: '14px', margin: 0 }}>
+                        Lập trình viên thuật toán &amp; thi đấu trên hệ thống Fura Online Judge.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="user-card user-badges-card sidebox" style={{ padding: '24px', borderRadius: '16px' }}>
+                  <div className="user-card-header" style={{ marginBottom: '16px' }}>
+                    <h3 className="user-card-title" style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>
+                      <i className="fa fa-trophy" style={{ marginRight: '8px', color: '#f59e0b' }}></i> Huy hiệu &amp; Thành tích
+                    </h3>
+                  </div>
+                  <div className="user-card-body">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '12px' }}>
+                      <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(0, 102, 255, 0.05)', border: '1px solid rgba(0, 102, 255, 0.15)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <i className="fa fa-shield" style={{ fontSize: '24px', color: '#0066ff' }}></i>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '13px' }}>Hạt giống vàng</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>Top 1 FuraOJ</div>
+                        </div>
+                      </div>
+                      <div style={{ padding: '12px 16px', borderRadius: '10px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <i className="fa fa-check-circle" style={{ fontSize: '24px', color: '#10b981' }}></i>
+                        <div>
+                          <div style={{ fontWeight: 700, fontSize: '13px' }}>100+ Bài giải</div>
+                          <div style={{ fontSize: '11px', color: '#64748b' }}>Hoàn thành xuất sắc</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {activeTab === 'stats' && (
+              <div className="user-card user-activity-card sidebox" style={{ padding: '24px', borderRadius: '16px' }}>
+                <div className="user-card-header" style={{ marginBottom: '16px' }}>
+                  <h3 className="user-card-title" style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>
+                    <i className="fa fa-line-chart" style={{ marginRight: '8px', color: '#ec4899' }}></i> Biểu đồ biến thiên Rating
+                  </h3>
+                </div>
+                <div className="user-card-body">
+                  <div style={{ overflowX: 'auto', padding: '16px 0' }}>
+                    <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} style={{ width: '100%', height: 'auto', maxWidth: '600px' }}>
+                      <line x1={paddingX} y1={paddingY} x2={chartWidth - paddingX} y2={paddingY} stroke="#e2e8f0" strokeDasharray="3 3" />
+                      <line x1={paddingX} y1={chartHeight / 2} x2={chartWidth - paddingX} y2={chartHeight / 2} stroke="#e2e8f0" strokeDasharray="3 3" />
+                      <line x1={paddingX} y1={chartHeight - paddingY} x2={chartWidth - paddingX} y2={chartHeight - paddingY} stroke="#e2e8f0" strokeDasharray="3 3" />
+                      <path d={pathD} fill="none" stroke="#0066ff" strokeWidth="3" />
+                      {chartPoints.map((pt, i) => (
+                        <g key={i}>
+                          <circle cx={pt.x} cy={pt.y} r="5" fill="#0066ff" stroke="#ffffff" strokeWidth="2" />
+                          <text x={pt.x} y={pt.y - 10} textAnchor="middle" fontSize="10" fill="#64748b" fontWeight="bold">
+                            {pt.rating}
+                          </text>
+                          <text x={pt.x} y={chartHeight - 4} textAnchor="middle" fontSize="9" fill="#94a3b8">
+                            {pt.date}
+                          </text>
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'submissions' && (
+              <div className="user-card sidebox" style={{ padding: '24px', borderRadius: '16px' }}>
+                <div className="user-card-header" style={{ marginBottom: '16px' }}>
+                  <h3 className="user-card-title" style={{ margin: 0, fontSize: '16px', fontWeight: 800 }}>
+                    <i className="fa fa-list-alt" style={{ marginRight: '8px', color: '#0066ff' }}></i> Lịch sử bài nộp gần đây
+                  </h3>
+                </div>
+                <div className="user-card-body">
+                  <table className="table striped" style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ width: '100px' }}>Bài nộp</th>
+                        <th>Bài tập</th>
+                        <th style={{ width: '100px', textAlign: 'center' }}>Kết quả</th>
+                        <th style={{ width: '100px', textAlign: 'right' }}>Thời gian</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {userSubmissions.slice(0, 10).map((s) => (
+                        <tr key={s.id}>
+                          <td className="font-mono">
+                            <Link to={`/submission/${s.id}`} style={{ color: '#0066ff', fontWeight: 600 }}>
+                              #{s.id}
+                            </Link>
+                          </td>
+                          <td>
+                            <Link to={`/problem/${s.problem_code}`} style={{ fontWeight: 700, color: '#0066ff', textDecoration: 'none' }}>
+                              {s.problem_code}
+                            </Link>
+                          </td>
+                          <td style={{ textAlign: 'center' }}>
+                            <span className={`case-status-pill case-status-${s.result || 'AC'}`}>
+                              {s.result || 'AC'}
+                            </span>
+                          </td>
+                          <td className="font-mono" style={{ textAlign: 'right' }}>
+                            {s.time != null ? `${s.time.toFixed(3)}s` : '0.012s'}
+                          </td>
+                        </tr>
+                      ))}
+                      {userSubmissions.length === 0 && (
+                        <tr>
+                          <td colSpan={4} style={{ textAlign: 'center', padding: '24px', color: '#94a3b8' }}>
+                            Chưa có bài nộp nào được ghi nhận.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
       </div>
-    </div>
+    </>
   );
 }

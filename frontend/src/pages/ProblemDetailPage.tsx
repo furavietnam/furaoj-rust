@@ -1,13 +1,12 @@
 // Logic: Authentic DMOJ / FuraOJ problem detail interface matching oj.fura.io.vn/problem/{code}.
-// Input: Active problem slug from route parameter, live source code edits, language selection.
-// Output: Two-column problem detail with statement KaTeX rendering, info sidebar metadata, and code editor.
+// Input: Problem code slug from URL, active source code edits, language selection, and submit modal state.
+// Output: Two-column problem detail with statement KaTeX rendering, info sidebar metadata, comments area, and submit modal.
 
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { ProblemStatement } from '../components/ProblemStatement';
 import { CodeEditor } from '../components/CodeEditor';
-import { VerdictBadge } from '../components/VerdictBadge';
 
 const DEFAULT_SNIPPETS: Record<string, string> = {
   cpp: `#include <iostream>
@@ -51,6 +50,7 @@ export function ProblemDetailPage(): JSX.Element {
   const [sourceCode, setSourceCode] = useState<string>(DEFAULT_SNIPPETS.cpp);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [latestSubmission, setLatestSubmission] = useState<any>(null);
+  const [submitModalOpen, setSubmitModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     async function load() {
@@ -84,6 +84,7 @@ export function ProblemDetailPage(): JSX.Element {
         source_code: sourceCode,
       });
       setLatestSubmission(res);
+      setSubmitModalOpen(false);
       if (res && res.submission_id) {
         navigate(`/submission/${res.submission_id}`);
       }
@@ -179,12 +180,14 @@ export function ProblemDetailPage(): JSX.Element {
 
             {/* Code Editor submission card */}
             <div
+              id="submission-editor-card"
               style={{
                 background: 'var(--card-bg, #ffffff)',
                 border: '1px solid #edf2f7',
                 borderRadius: '16px',
                 padding: '20px',
                 boxShadow: '0 4px 20px -2px rgba(0,0,0,0.04)',
+                marginBottom: '24px',
               }}
             >
               <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
@@ -200,19 +203,64 @@ export function ProblemDetailPage(): JSX.Element {
                 isSubmitting={isSubmitting}
               />
             </div>
+
+            {/* Discussion & Comments Area */}
+            <div id="comments" style={{ marginTop: '24px' }}>
+              <div className="sidebox" style={{ borderRadius: '16px', padding: '24px' }}>
+                <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', fontWeight: 800 }}>
+                  <i className="fa fa-comments" style={{ marginRight: '8px', color: '#0066ff' }}></i>
+                  Bình luận &amp; Thảo luận
+                </h3>
+                <div style={{ color: '#64748b', fontSize: '14px', textAlign: 'center', padding: '24px' }}>
+                  Chưa có bình luận nào cho bài tập này. Hãy trao đổi và chia sẻ hướng giải tại đây!
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right Column: Problem Metadata Sidebar */}
           <div id="content-right" style={{ width: '300px', flexShrink: 0 }}>
             <div className="info-float">
+              {/* Authentic Submit Solution Button */}
+              <a
+                href="javascript:void(0)"
+                onClick={() => setSubmitModalOpen(true)}
+                className="unselectable button full submit-solution-btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px',
+                  padding: '12px 18px',
+                  borderRadius: '10px',
+                  background: 'linear-gradient(135deg, #0066ff 0%, #0052cc 100%)',
+                  color: '#ffffff',
+                  textDecoration: 'none',
+                  fontWeight: 800,
+                  fontSize: '14px',
+                  boxShadow: '0 4px 14px rgba(0, 102, 255, 0.3)',
+                  marginBottom: '14px',
+                  cursor: 'pointer',
+                }}
+              >
+                <i className="fa fa-paper-plane"></i> <span>Nộp bài giải</span>
+              </a>
+
+              <hr style={{ paddingTop: '0.3em', margin: '10px 0' }} />
+
               <div style={{ marginBottom: '6px' }}>
-                <Link to={`/submissions?problem=${problem.code}`} style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 600, fontSize: '14px' }}>
-                  Danh sách bài nộp
+                <Link to={`/submissions?problem=${problem.code}`} style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 600, fontSize: '13.5px' }}>
+                  <i className="fa fa-list-alt" style={{ marginRight: '6px' }}></i> Bài nộp của tôi
+                </Link>
+              </div>
+              <div style={{ marginBottom: '6px' }}>
+                <Link to={`/submissions?problem=${problem.code}`} style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 600, fontSize: '13.5px' }}>
+                  <i className="fa fa-clock-o" style={{ marginRight: '6px' }}></i> Tất cả bài nộp
                 </Link>
               </div>
               <div style={{ marginBottom: '12px' }}>
-                <Link to={`/submissions?problem=${problem.code}`} style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 600, fontSize: '14px' }}>
-                  Bài nộp tốt nhất
+                <Link to={`/submissions?problem=${problem.code}`} style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 600, fontSize: '13.5px' }}>
+                  <i className="fa fa-trophy" style={{ marginRight: '6px' }}></i> Bài nộp tốt nhất
                 </Link>
               </div>
 
@@ -222,40 +270,40 @@ export function ProblemDetailPage(): JSX.Element {
                 <span className="pi-name">
                   <i className="fa fa-check fa-fw" style={{ color: '#10b981', marginRight: '6px' }}></i> Điểm:
                 </span>
-                <span className="pi-value">
+                <span className="pi-value font-mono" style={{ fontWeight: 700 }}>
                   {problem.points ? problem.points.toFixed(2) : '100.00'} (OI)
                 </span>
               </div>
 
               <div className="problem-info-entry">
                 <span className="pi-name">
-                  <i className="fa fa-clock-o fa-fw" style={{ color: '#f59e0b', marginRight: '6px' }}></i> Giới hạn thời gian:
+                  <i className="fa fa-clock-o fa-fw" style={{ color: '#f59e0b', marginRight: '6px' }}></i> Thời gian giới hạn:
                 </span>
-                <span className="pi-value">{problem.time_limit}s</span>
+                <span className="pi-value font-mono">{problem.time_limit}s</span>
               </div>
 
               <div className="problem-info-entry">
                 <span className="pi-name">
-                  <i className="fa fa-server fa-fw" style={{ color: '#8b5cf6', marginRight: '6px' }}></i> Giới hạn bộ nhớ:
+                  <i className="fa fa-server fa-fw" style={{ color: '#8b5cf6', marginRight: '6px' }}></i> Bộ nhớ giới hạn:
                 </span>
-                <span className="pi-value">{problem.memory_limit}M</span>
+                <span className="pi-value font-mono">{problem.memory_limit}M</span>
               </div>
 
               <div className="problem-info-entry">
                 <span className="pi-name">
-                  <i className="fa fa-keyboard-o fa-fw" style={{ color: '#64748b', marginRight: '6px' }}></i> Input:
+                  <i className="fa fa-keyboard-o fa-fw" style={{ color: '#64748b', marginRight: '6px' }}></i> Đầu vào:
                 </span>
                 <span className="pi-value">
-                  <i>standard input</i>
+                  <i>stdin (standard input)</i>
                 </span>
               </div>
 
               <div className="problem-info-entry">
                 <span className="pi-name">
-                  <i className="fa fa-print fa-fw" style={{ color: '#64748b', marginRight: '6px' }}></i> Output:
+                  <i className="fa fa-print fa-fw" style={{ color: '#64748b', marginRight: '6px' }}></i> Đầu ra:
                 </span>
                 <span className="pi-value">
-                  <i>standard output</i>
+                  <i>stdout (standard output)</i>
                 </span>
               </div>
 
@@ -275,14 +323,70 @@ export function ProblemDetailPage(): JSX.Element {
               </div>
 
               <div id="problem-types" style={{ marginTop: '16px' }}>
-                <div className="toggle closed unselectable" style={{ fontSize: '13px', color: '#64748b', cursor: 'pointer' }}>
-                  <i className="fa fa-chevron-right fa-fw"></i> Dạng bài: Thuật toán &amp; Cấu trúc dữ liệu
+                <div className="toggle closed unselectable" style={{ fontSize: '13px', color: '#64748b' }}>
+                  <i className="fa fa-chevron-right fa-fw"></i> Thể loại: Thuật toán &amp; Cấu trúc dữ liệu
                 </div>
+              </div>
+
+              <div id="allowed-langs" style={{ marginTop: '12px', fontSize: '12.5px', color: '#64748b' }}>
+                <div style={{ fontWeight: 600, marginBottom: '4px' }}>Ngôn ngữ hỗ trợ:</div>
+                <div>C++17, Python 3, Rust, Java 17, C11, Pascal</div>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modal Submit Dialog matching DMOJ #submit-modal */}
+      {submitModalOpen && (
+        <div id="submit-modal" className="active" style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div
+            id="submit-modal-overlay"
+            onClick={() => setSubmitModalOpen(false)}
+            style={{ position: 'absolute', inset: 0, background: 'rgba(0, 0, 0, 0.55)', backdropFilter: 'blur(3px)' }}
+          ></div>
+          <div
+            id="submit-modal-dialog"
+            style={{
+              position: 'relative',
+              zIndex: 10000,
+              width: '90%',
+              maxWidth: '800px',
+              background: 'var(--card-bg, #ffffff)',
+              borderRadius: '20px',
+              padding: '24px',
+              boxShadow: '0 20px 40px -10px rgba(0, 0, 0, 0.3)',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div className="submit-modal-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+              <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 800 }}>
+                <i className="fa fa-paper-plane" style={{ marginRight: '8px', color: '#0066ff' }}></i>
+                Nộp bài giải: [{problem.code}] {problem.name}
+              </h3>
+              <button
+                type="button"
+                className="submit-modal-close"
+                onClick={() => setSubmitModalOpen(false)}
+                style={{ background: 'none', border: 'none', fontSize: '18px', cursor: 'pointer', color: '#64748b' }}
+              >
+                <i className="fa fa-times"></i>
+              </button>
+            </div>
+            <div className="submit-modal-body">
+              <CodeEditor
+                code={sourceCode}
+                onChange={setSourceCode}
+                language={language}
+                onLanguageChange={handleLanguageChange}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

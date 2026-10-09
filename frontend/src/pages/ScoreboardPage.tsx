@@ -1,3 +1,7 @@
+// Logic: Authentic DMOJ / FuraOJ live contest scoreboard matching templates/contest/ranking.html.
+// Input: Contest slug from URL parameter, live standings and penalties from REST/WebSocket API.
+// Output: JSX.Element responsive ICPC/OI rank standings table with problem solved status badges.
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ScoreboardData } from '../types';
@@ -9,17 +13,17 @@ const DEFAULT_SCOREBOARD: ScoreboardData = {
     id: 1,
     title: 'FuraOJ Championship Round 1',
     slug: 'demo',
-    description: 'The inaugural competitive round of FuraOJ v2.0.',
+    description: 'Vòng thi chính thức của Fura Online Judge.',
     start_time: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
     end_time: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString(),
     is_visible: true,
     is_frozen: false,
   },
   problems: [
-    { code: 'A', title: 'A + B Problem', points: 100 },
-    { code: 'B', title: 'Prime Number Sieve', points: 200 },
-    { code: 'C', title: '0/1 Knapsack Problem', points: 300 },
-    { code: 'D', title: 'Dijkstra Shortest Path', points: 400 },
+    { code: 'A', title: 'A Plus B Problem', points: 100 },
+    { code: 'B', title: 'Số Fibonacci', points: 200 },
+    { code: 'C', title: 'Tính giai thừa', points: 300 },
+    { code: 'D', title: 'Đường đi ngắn nhất', points: 400 },
   ],
   rows: [
     {
@@ -61,27 +65,9 @@ const DEFAULT_SCOREBOARD: ScoreboardData = {
         D: { solved: false, attempts: 0, time_minutes: 0, points: 0 },
       },
     },
-    {
-      rank: 4,
-      user_id: 4,
-      username: 'brian',
-      score: 100,
-      penalty: 15,
-      problem_results: {
-        A: { solved: true, attempts: 1, time_minutes: 15, points: 100 },
-        B: { solved: false, attempts: 2, time_minutes: 0, points: 0 },
-        C: { solved: false, attempts: 0, time_minutes: 0, points: 0 },
-        D: { solved: false, attempts: 0, time_minutes: 0, points: 0 },
-      },
-    },
   ],
 };
 
-/**
- * Logic: Real-time contest scoreboard table displaying rankings, penalties, and per-problem solved status.
- * Input: None (URL parameter: `slug`).
- * Output: JSX.Element responsive competitive programming standings matrix.
- */
 export function ScoreboardPage(): JSX.Element {
   const { slug = 'demo' } = useParams<{ slug: string }>();
   const [data, setData] = useState<ScoreboardData>(DEFAULT_SCOREBOARD);
@@ -104,97 +90,120 @@ export function ScoreboardPage(): JSX.Element {
   useLiveWebSocket();
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-800 pb-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-white">
-              {data.contest.title} - Scoreboard
-            </h1>
-            {data.contest.is_frozen && (
-              <span className="rounded bg-cyan-950/70 border border-cyan-600/40 px-2.5 py-0.5 font-mono text-xs font-semibold text-cyan-400">
-                Scoreboard Frozen ❄️
-              </span>
-            )}
+    <>
+      <div className="problem-list-header">
+        <div className="problem-header-left">
+          <div className="problem-header-icon">
+            <i className="fa fa-bar-chart"></i>
           </div>
-          <p className="mt-1 text-sm text-zinc-400">
-            Real-time standings computed with standard ICPC/OI penalty and score formulas.
-          </p>
+          <div className="problem-header-title-block">
+            <h1 className="problem-header-title">
+              Bảng điểm trực tiếp: {data.contest.title}
+            </h1>
+            <span className="problem-header-subtitle">
+              Bảng xếp hạng thời gian thực theo chuẩn ICPC/OI &bull; Cập nhật liên tục qua WebSocket
+            </span>
+          </div>
         </div>
-
-        <div>
-          <Link
-            to={`/contest/${data.contest.slug}`}
-            className="rounded border border-zinc-700 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-300 hover:bg-zinc-800"
-          >
-            &larr; Back to Contest
-          </Link>
+        <div className="problem-header-actions">
+          <div className="header-segmented-control">
+            <Link to={`/contest/${data.contest.slug}`} className="seg-btn">
+              <i className="fa fa-arrow-left"></i> <span>Quay lại kỳ thi</span>
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-md">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-800 bg-zinc-950/80 font-mono text-xs uppercase text-zinc-400">
+      <div id="content-body">
+        <div className="h-scrollable-table">
+          <table className="table striped" style={{ width: '100%', textAlign: 'left' }}>
+            <thead>
               <tr>
-                <th className="px-4 py-3.5 text-center w-16">Rank</th>
-                <th className="px-6 py-3.5">User</th>
-                <th className="px-4 py-3.5 text-center font-bold text-zinc-200">Score</th>
-                <th className="px-4 py-3.5 text-center">Penalty</th>
+                <th style={{ width: '60px', textAlign: 'center' }}>Hạng</th>
+                <th style={{ width: '180px' }}>Thí sinh</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>Điểm</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>Phạt</th>
                 {data.problems.map((prob) => (
-                  <th key={prob.code} className="px-4 py-3.5 text-center">
-                    <div>{prob.code}</div>
-                    <div className="text-[10px] text-zinc-500 font-normal">{prob.points}p</div>
+                  <th key={prob.code} style={{ textAlign: 'center', minWidth: '80px' }}>
+                    <div className="font-mono" style={{ fontWeight: 800 }}>{prob.code}</div>
+                    <div style={{ fontSize: '11px', color: '#64748b' }}>{prob.points}p</div>
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/60 font-mono">
+            <tbody>
               {data.rows.map((row) => (
-                <tr key={row.username} className="transition hover:bg-zinc-800/40">
-                  <td className="px-4 py-4 text-center font-bold text-zinc-300">
+                <tr key={row.username}>
+                  <td className="font-mono" style={{ textAlign: 'center', fontWeight: 800 }}>
                     {row.rank === 1 ? '🥇 1' : row.rank === 2 ? '🥈 2' : row.rank === 3 ? '🥉 3' : row.rank}
                   </td>
-                  <td className="px-6 py-4 font-sans font-medium text-zinc-100">
-                    <Link to={`/user/${row.username}`} className="hover:text-blue-400">
+                  <td>
+                    <Link
+                      to={`/user/${row.username}`}
+                      style={{ fontWeight: 700, color: '#0066ff', textDecoration: 'none' }}
+                    >
                       {row.username}
                     </Link>
                   </td>
-                  <td className="px-4 py-4 text-center font-bold text-lg text-emerald-400">
+                  <td className="font-mono" style={{ textAlign: 'center', fontWeight: 800, color: '#10b981', fontSize: '15px' }}>
                     {row.score}
                   </td>
-                  <td className="px-4 py-4 text-center text-xs text-zinc-400">
-                    {row.penalty} min
+                  <td className="font-mono" style={{ textAlign: 'center', fontSize: '12.5px', color: '#64748b' }}>
+                    {row.penalty} m
                   </td>
                   {data.problems.map((prob) => {
-                    const result = row.problem_results[prob.code];
-                    if (!result) {
+                    const res = row.problem_results[prob.code];
+                    if (!res) {
                       return (
-                        <td key={prob.code} className="px-4 py-4 text-center text-zinc-600">
-                          -
+                        <td key={prob.code} style={{ textAlign: 'center', color: '#94a3b8' }}>
+                          &mdash;
                         </td>
                       );
                     }
 
-                    if (result.solved) {
+                    if (res.solved) {
                       return (
-                        <td key={prob.code} className="px-4 py-4 text-center bg-emerald-950/20 text-emerald-400">
-                          <div className="font-bold">+{result.attempts > 1 ? result.attempts - 1 : ''}</div>
-                          <div className="text-[10px] text-emerald-500">{result.time_minutes}'</div>
+                        <td key={prob.code} style={{ textAlign: 'center' }}>
+                          <div
+                            style={{
+                              display: 'inline-block',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              background: 'rgba(16, 185, 129, 0.12)',
+                              color: '#10b981',
+                              fontWeight: 800,
+                              fontSize: '12px',
+                            }}
+                          >
+                            <div>+{res.attempts > 1 ? res.attempts - 1 : ''}</div>
+                            <div style={{ fontSize: '10px', color: '#059669' }}>{res.time_minutes}'</div>
+                          </div>
                         </td>
                       );
                     }
 
-                    if (result.attempts > 0) {
+                    if (res.attempts > 0) {
                       return (
-                        <td key={prob.code} className="px-4 py-4 text-center bg-rose-950/20 text-rose-400">
-                          <div className="font-bold">-{result.attempts}</div>
+                        <td key={prob.code} style={{ textAlign: 'center' }}>
+                          <div
+                            style={{
+                              display: 'inline-block',
+                              padding: '4px 8px',
+                              borderRadius: '6px',
+                              background: 'rgba(239, 68, 68, 0.12)',
+                              color: '#ef4444',
+                              fontWeight: 800,
+                              fontSize: '12px',
+                            }}
+                          >
+                            -{res.attempts}
+                          </div>
                         </td>
                       );
                     }
 
                     return (
-                      <td key={prob.code} className="px-4 py-4 text-center text-zinc-600">
+                      <td key={prob.code} style={{ textAlign: 'center', color: '#94a3b8' }}>
                         .
                       </td>
                     );
@@ -205,6 +214,6 @@ export function ScoreboardPage(): JSX.Element {
           </table>
         </div>
       </div>
-    </div>
+    </>
   );
 }

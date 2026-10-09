@@ -1,3 +1,7 @@
+// Logic: Authentic DMOJ / FuraOJ contest arena dashboard matching templates/contest/contest.html.
+// Input: Contest slug from URL parameter, problem challenges list from API.
+// Output: JSX.Element contest problem challenge matrix with segmented control and scoreboard link.
+
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Contest } from '../types';
@@ -7,7 +11,7 @@ const DEFAULT_CONTEST: Contest = {
   id: 1,
   title: 'FuraOJ Championship Round 1',
   slug: 'demo',
-  description: 'The inaugural competitive round of FuraOJ v2.0 featuring 5 algorithmic challenges.',
+  description: 'Vòng thi chính thức của Fura Online Judge bao gồm 4 bài toán thuật toán phân hóa.',
   start_time: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
   end_time: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString(),
   is_visible: true,
@@ -15,17 +19,12 @@ const DEFAULT_CONTEST: Contest = {
 };
 
 const CONTEST_PROBLEMS = [
-  { code: 'A', title: 'A + B Problem', points: 100, problem_code: 'aplusb' },
-  { code: 'B', title: 'Prime Number Sieve', points: 200, problem_code: 'primesieve' },
-  { code: 'C', title: '0/1 Knapsack Problem', points: 300, problem_code: 'knapsack' },
-  { code: 'D', title: 'Dijkstra Shortest Path', points: 400, problem_code: 'shortestpath' },
+  { code: 'A', title: 'A Plus B Problem', points: 100, problem_code: 'aplusb' },
+  { code: 'B', title: 'Số Fibonacci (Fibonacci Numbers)', points: 200, problem_code: 'fibonacci' },
+  { code: 'C', title: 'Tính giai thừa (Factorial)', points: 300, problem_code: 'factorial' },
+  { code: 'D', title: 'Tìm đường đi ngắn nhất Dijkstra', points: 400, problem_code: 'shortestpath' },
 ];
 
-/**
- * Logic: Contest arena dashboard showing active contest status, countdown timer, and problem challenge matrix.
- * Input: None (URL parameter: `slug`).
- * Output: JSX.Element contest challenge view.
- */
 export function ContestDetailPage(): JSX.Element {
   const { slug = 'demo' } = useParams<{ slug: string }>();
   const [contest, setContest] = useState<Contest>(DEFAULT_CONTEST);
@@ -45,69 +44,126 @@ export function ContestDetailPage(): JSX.Element {
   }, [slug]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-800 pb-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="rounded bg-emerald-950/70 border border-emerald-600/40 px-2.5 py-0.5 font-mono text-xs font-semibold text-emerald-400 animate-pulse">
-              Running
-            </span>
-            <h1 className="text-2xl font-bold tracking-tight text-white">{contest.title}</h1>
+    <>
+      <div className="problem-list-header">
+        <div className="problem-header-left">
+          <div className="problem-header-icon">
+            <i className="fa fa-trophy"></i>
           </div>
-          <p className="mt-1 text-sm text-zinc-400">{contest.description}</p>
+          <div className="problem-header-title-block">
+            <h1 className="problem-header-title">{contest.title}</h1>
+            <span className="problem-header-subtitle">
+              {contest.description}
+            </span>
+          </div>
         </div>
-
-        <div className="flex items-center gap-3">
-          <Link
-            to={`/contest/${contest.slug}/scoreboard`}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white transition hover:bg-blue-500 shadow-sm"
-          >
-            Live Scoreboard 📊
-          </Link>
+        <div className="problem-header-actions">
+          <div className="header-segmented-control">
+            <button className="seg-btn active">
+              <i className="fa fa-th-large"></i> <span>Bài tập</span>
+            </button>
+            <Link to={`/contest/${contest.slug}/scoreboard`} className="seg-btn">
+              <i className="fa fa-bar-chart"></i> <span>Bảng điểm</span>
+            </Link>
+          </div>
         </div>
       </div>
 
-      <div className="space-y-4">
-        <h2 className="text-lg font-bold text-zinc-200">Contest Problems</h2>
-
-        <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-md">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-800 bg-zinc-950/80 font-mono text-xs uppercase text-zinc-400">
-              <tr>
-                <th className="px-6 py-3.5">#</th>
-                <th className="px-6 py-3.5">Problem Title</th>
-                <th className="px-6 py-3.5 text-center">Points</th>
-                <th className="px-6 py-3.5 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/60">
-              {CONTEST_PROBLEMS.map((p) => (
-                <tr key={p.code} className="transition hover:bg-zinc-800/40">
-                  <td className="px-6 py-4 font-mono font-bold text-blue-400">
-                    {p.code}
-                  </td>
-                  <td className="px-6 py-4 font-medium text-zinc-200">
-                    <Link to={`/problem/${p.problem_code}`} className="hover:text-blue-400">
-                      {p.title}
-                    </Link>
-                  </td>
-                  <td className="px-6 py-4 text-center font-mono text-xs font-semibold text-zinc-300">
-                    {p.points} pts
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <Link
-                      to={`/problem/${p.problem_code}`}
-                      className="rounded-md bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-xs font-medium text-blue-400 transition hover:bg-blue-600 hover:text-white"
-                    >
-                      Solve Problem &rarr;
-                    </Link>
-                  </td>
+      <div id="content-body">
+        <div id="common-content" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+          {/* Main Contest Problems Table */}
+          <div id="content-left" style={{ flex: 1, minWidth: 0 }}>
+            <table id="problem-table" className="table striped" style={{ width: '100%' }}>
+              <thead>
+                <tr>
+                  <th style={{ width: '60px', textAlign: 'center' }}>#</th>
+                  <th>Tên bài tập</th>
+                  <th style={{ width: '100px', textAlign: 'right' }}>Điểm</th>
+                  <th style={{ width: '120px', textAlign: 'right' }}>Thao tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {CONTEST_PROBLEMS.map((p) => (
+                  <tr key={p.code}>
+                    <td className="font-mono" style={{ textAlign: 'center', fontWeight: 800, color: '#0066ff' }}>
+                      {p.code}
+                    </td>
+                    <td>
+                      <Link
+                        to={`/problem/${p.problem_code}`}
+                        style={{ color: '#0066ff', fontWeight: 700, textDecoration: 'none', fontSize: '15px' }}
+                      >
+                        {p.title}
+                      </Link>
+                    </td>
+                    <td className="font-mono" style={{ textAlign: 'right', fontWeight: 700 }}>
+                      {p.points} pts
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <Link
+                        to={`/problem/${p.problem_code}`}
+                        className="unselectable button"
+                        style={{
+                          display: 'inline-block',
+                          padding: '6px 14px',
+                          borderRadius: '6px',
+                          background: '#0066ff',
+                          color: '#ffffff',
+                          textDecoration: 'none',
+                          fontWeight: 600,
+                          fontSize: '12.5px',
+                        }}
+                      >
+                        <i className="fa fa-pencil"></i> Giải bài
+                      </Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Right Contest Info Sidebar */}
+          <div id="content-right" style={{ width: '280px', flexShrink: 0 }}>
+            <div className="sidebox" style={{ padding: '20px', borderRadius: '16px' }}>
+              <h3 style={{ margin: '0 0 14px 0', fontSize: '15px', fontWeight: 800 }}>
+                <i className="fa fa-info-circle" style={{ marginRight: '6px', color: '#0066ff' }}></i> Thông tin kỳ thi
+              </h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px', color: '#64748b' }}>
+                <div>
+                  <strong style={{ color: '#0f172a' }}>Thể thức:</strong> ICPC / IOI
+                </div>
+                <div>
+                  <strong style={{ color: '#0f172a' }}>Thời lượng:</strong> 3 giờ
+                </div>
+                <div>
+                  <strong style={{ color: '#0f172a' }}>Đóng băng bảng điểm:</strong> 60 phút cuối
+                </div>
+                <hr style={{ margin: '8px 0', border: 'none', borderTop: '1px solid #edf2f7' }} />
+                <Link
+                  to={`/contest/${contest.slug}/scoreboard`}
+                  className="unselectable button full"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    background: '#0066ff',
+                    color: '#ffffff',
+                    textDecoration: 'none',
+                    fontWeight: 700,
+                    fontSize: '13px',
+                  }}
+                >
+                  <i className="fa fa-bar-chart"></i> Xem Bảng điểm trực tiếp
+                </Link>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
