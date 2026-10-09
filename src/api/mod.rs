@@ -5,6 +5,7 @@
 pub mod auth;
 pub mod contests;
 pub mod health;
+pub mod judges;
 pub mod problems;
 pub mod submissions;
 pub mod users;
@@ -52,7 +53,19 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         .route("/contest/:key/scoreboard", get(contests::get_scoreboard_handler))
         // User routes
         .route("/users", get(users::list_users_handler))
-        .route("/user/:username", get(users::get_user_handler));
+        .route("/user/:username", get(users::get_user_handler))
+        // Judge & Language cluster routes
+        .route(
+            "/judges",
+            get(judges::list_judges_handler).post(judges::create_judge_handler),
+        )
+        .route("/languages", get(judges::list_languages_handler))
+        // Admin statistics and control routes
+        .route("/admin/stats", get(judges::admin_stats_handler))
+        .route(
+            "/admin/judges",
+            get(judges::list_judges_handler).post(judges::create_judge_handler),
+        );
 
     Router::new()
         .route("/health", get(health::health_check))

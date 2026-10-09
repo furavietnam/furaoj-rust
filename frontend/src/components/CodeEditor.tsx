@@ -11,18 +11,26 @@ interface CodeEditorProps {
 }
 
 const SUPPORTED_LANGUAGES = [
-  { id: 'cpp', name: 'C++ 20 (GCC 13)', monacoLang: 'cpp' },
+  { id: 'cpp', name: 'C++ 20 (GCC)', monacoLang: 'cpp' },
   { id: 'cppthemis', name: 'C++ (Themis - 64MB Stack)', monacoLang: 'cpp' },
-  { id: 'python', name: 'Python 3.12 (CPython)', monacoLang: 'python' },
+  { id: 'python', name: 'Python 3 (CPython)', monacoLang: 'python' },
+  { id: 'pypy3', name: 'PyPy 3 (Fast JIT)', monacoLang: 'python' },
   { id: 'rust', name: 'Rust 2021 (rustc)', monacoLang: 'rust' },
-  { id: 'c', name: 'C11 (GCC 13)', monacoLang: 'c' },
+  { id: 'c', name: 'C11 (GCC)', monacoLang: 'c' },
   { id: 'pas', name: 'Pascal (Free Pascal)', monacoLang: 'pascal' },
   { id: 'pasthemis', name: 'Pascal (Themis - 64MB Stack)', monacoLang: 'pascal' },
-  { id: 'java', name: 'Java 21 (OpenJDK)', monacoLang: 'java' },
+  { id: 'java', name: 'Java 17/21 (OpenJDK)', monacoLang: 'java' },
   { id: 'go', name: 'Go 1.22', monacoLang: 'go' },
-  { id: 'kotlin', name: 'Kotlin', monacoLang: 'kotlin' },
-  { id: 'nodejs', name: 'JavaScript (Node.js)', monacoLang: 'javascript' },
   { id: 'scratch', name: 'Scratch 3.0 (sb3)', monacoLang: 'plaintext' },
+  { id: 'kotlin', name: 'Kotlin (JVM)', monacoLang: 'kotlin' },
+  { id: 'nodejs', name: 'JavaScript (Node.js)', monacoLang: 'javascript' },
+  { id: 'monocs', name: 'C# (Mono)', monacoLang: 'csharp' },
+  { id: 'f95', name: 'Fortran 95 (GFortran)', monacoLang: 'fortran' },
+  { id: 'nasm', name: 'NASM x86 Assembly', monacoLang: 'plaintext' },
+  { id: 'hask', name: 'Haskell (GHC)', monacoLang: 'plaintext' },
+  { id: 'ocaml', name: 'OCaml', monacoLang: 'plaintext' },
+  { id: 'ruby', name: 'Ruby', monacoLang: 'ruby' },
+  { id: 'php', name: 'PHP 8', monacoLang: 'php' },
 ];
 
 /**

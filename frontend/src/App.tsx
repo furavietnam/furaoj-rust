@@ -14,6 +14,7 @@ import { UsersPage } from './pages/UsersPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { LoginPage } from './pages/LoginPage';
 import { JudgeStatusPage } from './pages/JudgeStatusPage';
+import { AdminPage } from './pages/AdminPage';
 
 /**
  * Logic: Root application router mapping URL paths to page views wrapped in AuthProvider and AppShell.
@@ -37,6 +38,8 @@ export function App(): JSX.Element {
             <Route path="/users" element={<UsersPage />} />
             <Route path="/user/:username" element={<UserProfilePage />} />
             <Route path="/status" element={<JudgeStatusPage />} />
+            <Route path="/admin" element={<AdminPage />} />
+            <Route path="/admin/" element={<AdminPage />} />
             <Route path="/login" element={<LoginPage />} />
           </Routes>
         </AppShell>

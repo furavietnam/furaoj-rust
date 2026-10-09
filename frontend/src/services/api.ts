@@ -170,4 +170,10 @@ export const api = {
   getUser: fetchUser,
   login: loginUser,
   getMe: fetchCurrentUser,
+  getJudges: () => apiClient.get('/judges').then((r) => r.data),
+  getLanguages: () => apiClient.get('/languages').then((r) => r.data),
+  getAdminStats: () => apiClient.get('/admin/stats').then((r) => r.data),
 };
+
+export default apiClient;
+

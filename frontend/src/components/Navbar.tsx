@@ -6,12 +6,16 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
+// Logic: Renders authentic DMOJ top navigation bar matching templates/base.html and navbar.json.
+// Input: Active route from react-router, authentication context, and user settings.
+// Output: JSX.Element responsive navbar with dropdown menus and user account controls.
 export function Navbar(): JSX.Element {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [theme, setThemeState] = useState<string>(() => localStorage.getItem('furaoj_theme') || 'dark');
   const navRef = useRef<HTMLElement>(null);
 
@@ -27,6 +31,7 @@ export function Navbar(): JSX.Element {
       if (navRef.current && !navRef.current.contains(e.target as Node)) {
         setOpenDropdown(null);
         setSettingsOpen(false);
+        setUserMenuOpen(false);
       }
     }
     document.addEventListener('click', handleClickOutside);
@@ -37,6 +42,7 @@ export function Navbar(): JSX.Element {
   useEffect(() => {
     setOpenDropdown(null);
     setSettingsOpen(false);
+    setUserMenuOpen(false);
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
@@ -45,6 +51,7 @@ export function Navbar(): JSX.Element {
     e.stopPropagation();
     setOpenDropdown(prev => (prev === name ? null : name));
     setSettingsOpen(false);
+    setUserMenuOpen(false);
   };
 
   const toggleSettings = (e: React.MouseEvent) => {
@@ -52,7 +59,18 @@ export function Navbar(): JSX.Element {
     e.stopPropagation();
     setSettingsOpen(prev => !prev);
     setOpenDropdown(null);
+    setUserMenuOpen(false);
   };
+
+  const toggleUserMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setUserMenuOpen(prev => !prev);
+    setOpenDropdown(null);
+    setSettingsOpen(false);
+  };
+
+  const isStaff = user?.is_staff || user?.username === 'admin';
 
   return (
     <nav id="navigation" className="unselectable" ref={navRef}>
@@ -97,54 +115,49 @@ export function Navbar(): JSX.Element {
               Trang chủ
             </Link>
           </li>
-          <li className={openDropdown === 'problems' ? 'dropdown-open is-open' : ''}>
+          <li>
             <Link
               to="/problems"
               className={`nav-problems ${location.pathname.startsWith('/problem') ? 'active' : ''}`}
-              onClick={(e) => toggleDropdown('problems', e)}
             >
-              Bài
-              <div className="nav-expand">&gt;</div>
+              Danh sách bài
             </Link>
-            <ul>
-              <li>
-                <Link to="/submissions" className="nav-submit">
-                  Các bài nộp
-                </Link>
-              </li>
-              <li>
-                <Link to="/contests" className="nav-contest">
-                  Các kỳ thi
-                </Link>
-              </li>
-              <li>
-                <Link to="/exams" className="nav-exams">
-                  Đề thi
-                </Link>
-              </li>
-            </ul>
           </li>
-          <li className={openDropdown === 'users' ? 'dropdown-open is-open' : ''}>
+          <li>
+            <Link
+              to="/submissions"
+              className={`nav-submit ${location.pathname.startsWith('/submission') ? 'active' : ''}`}
+            >
+              Các bài nộp
+            </Link>
+          </li>
+          <li>
             <Link
               to="/users"
-              className={`nav-user ${location.pathname.startsWith('/user') ? 'active' : ''}`}
-              onClick={(e) => toggleDropdown('users', e)}
+              className={`nav-user ${
+                location.pathname.startsWith('/users') ||
+                (location.pathname.startsWith('/user') && !location.pathname.startsWith('/users'))
+                  ? 'active'
+                  : ''
+              }`}
             >
               Thành viên
-              <div className="nav-expand">&gt;</div>
             </Link>
-            <ul>
-              <li>
-                <Link to="/organizations" className="nav-organizati">
-                  Tổ chức
-                </Link>
-              </li>
-            </ul>
+          </li>
+          <li>
+            <Link
+              to="/contests"
+              className={`nav-contest ${location.pathname.startsWith('/contest') ? 'active' : ''}`}
+            >
+              Các kỳ thi
+            </Link>
           </li>
           <li className={openDropdown === 'about' ? 'dropdown-open is-open' : ''}>
             <a
               href="javascript:void(0)"
-              className="nav-about"
+              className={`nav-about ${
+                ['/status', '/custom_checkers', '/about'].includes(location.pathname) ? 'active' : ''
+              }`}
               onClick={(e) => toggleDropdown('about', e)}
             >
               Thông tin
@@ -154,6 +167,11 @@ export function Navbar(): JSX.Element {
               <li>
                 <Link to="/status" className="nav-status">
                   Máy chấm
+                </Link>
+              </li>
+              <li>
+                <Link to="/custom_checkers" className="nav-checkers">
+                  Trình chấm tùy biến
                 </Link>
               </li>
               <li>
@@ -171,102 +189,165 @@ export function Navbar(): JSX.Element {
         </ul>
 
         <span id="user-links">
-          <ul className="anon-settings-nav">
-            <li className={`anon-settings-item ${settingsOpen ? 'dropdown-open is-open' : ''}`}>
-              <a
-                href="javascript:void(0)"
-                className="nav-gear-btn"
-                title="Cài đặt"
-                aria-label="Cài đặt"
-                onClick={toggleSettings}
-              >
-                <i className="fa fa-gear"></i>
-              </a>
-              <ul className="settings-popup" style={{ minWidth: 210, right: 0, left: 'auto' }}>
-                <li>
-                  <div className="nav-settings-row">
-                    <span className="nav-settings-lbl">Giao diện</span>
-                    <span className="nav-seg">
-                      <span
-                        onClick={() => setThemeState('light')}
-                        className={`nav-seg-btn ${theme === 'light' ? 'active' : ''}`}
-                        role="button"
-                      >
-                        <i className="fa fa-sun-o"></i>
-                      </span>
-                      <span
-                        onClick={() => setThemeState('dark')}
-                        className={`nav-seg-btn ${theme === 'dark' ? 'active' : ''}`}
-                        role="button"
-                      >
-                        <i className="fa fa-moon-o"></i>
-                      </span>
-                    </span>
-                  </div>
-                </li>
-                <li>
-                  <div className="nav-settings-row">
-                    <span className="nav-settings-lbl">Ngôn ngữ</span>
-                    <span className="nav-seg">
-                      <span className="nav-seg-btn active">VI</span>
-                      <span className="nav-seg-btn">EN</span>
-                    </span>
-                  </div>
+          {!isAuthenticated ? (
+            <>
+              <ul className="anon-settings-nav">
+                <li className={`anon-settings-item ${settingsOpen ? 'dropdown-open is-open' : ''}`}>
+                  <a
+                    href="javascript:void(0)"
+                    className="nav-gear-btn"
+                    title="Cài đặt"
+                    aria-label="Cài đặt"
+                    onClick={toggleSettings}
+                  >
+                    <i className="fa fa-gear"></i>
+                  </a>
+                  <ul className="settings-popup" style={{ minWidth: 210, right: 0, left: 'auto' }}>
+                    <li>
+                      <div className="nav-settings-row">
+                        <span className="nav-settings-lbl">Giao diện</span>
+                        <span className="nav-seg">
+                          <span
+                            onClick={() => setThemeState('light')}
+                            className={`nav-seg-btn ${theme === 'light' ? 'active' : ''}`}
+                            role="button"
+                          >
+                            <i className="fa fa-sun-o"></i>
+                          </span>
+                          <span
+                            onClick={() => setThemeState('dark')}
+                            className={`nav-seg-btn ${theme === 'dark' ? 'active' : ''}`}
+                            role="button"
+                          >
+                            <i className="fa fa-moon-o"></i>
+                          </span>
+                        </span>
+                      </div>
+                    </li>
+                    <li>
+                      <div className="nav-settings-row">
+                        <span className="nav-settings-lbl">Ngôn ngữ</span>
+                        <span className="nav-seg">
+                          <span className="nav-seg-btn active">VI</span>
+                          <span className="nav-seg-btn">EN</span>
+                        </span>
+                      </div>
+                    </li>
+                  </ul>
                 </li>
               </ul>
-            </li>
-          </ul>
-
-          {isAuthenticated && user ? (
-            <span className="user-logged-in" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-              <Link
-                to={`/user/${user.username}`}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
-              >
-                <span
-                  style={{
-                    width: 26,
-                    height: 26,
-                    borderRadius: '50%',
-                    background: '#0066ff',
-                    color: '#ffffff',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: 12,
-                    fontWeight: 700,
-                  }}
-                >
-                  {user.username.slice(0, 1).toUpperCase()}
-                </span>
-                <span className="rating rate-none admin" style={{ fontWeight: 600 }}>
-                  {user.username}
-                </span>
-              </Link>
-              <button
-                onClick={logout}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#94a3b8',
-                  fontSize: 14,
-                  padding: '4px 6px',
-                }}
-                title="Đăng xuất"
-              >
-                <i className="fa fa-sign-out"></i>
-              </button>
-            </span>
+              <span className="anon">
+                <Link to="/login" className="btn-nav-login">
+                  Đăng nhập
+                </Link>
+                <Link to="/register" className="btn-nav-signup">
+                  Đăng ký
+                </Link>
+              </span>
+            </>
           ) : (
-            <span className="anon">
-              <Link to="/login" className="btn-nav-login">
-                Đăng nhập
-              </Link>
-              <Link to="/login" className="btn-nav-signup">
-                Đăng ký
-              </Link>
-            </span>
+            <ul className="user-dropdown-nav">
+              <li className={userMenuOpen ? 'dropdown-open is-open' : ''}>
+                <a
+                  href="javascript:void(0)"
+                  className="user-profile-pill"
+                  onClick={toggleUserMenu}
+                >
+                  <span className="user-avatar-circle">
+                    {(user?.username || 'U')[0].toUpperCase()}
+                  </span>
+                  <span className="user-display-name">{user?.username}</span>
+                  <i className="fa fa-angle-down user-chevron"></i>
+                </a>
+                <ul className="user-dropdown-menu" style={{ minWidth: 210, right: 0, left: 'auto' }}>
+                  <li>
+                    <Link to={`/user/${user?.username}`}>
+                      <i className="fa fa-user"></i> Trang cá nhân
+                    </Link>
+                  </li>
+                  {isStaff && (
+                    <li>
+                      <Link to="/admin">
+                        <i className="fa fa-cogs"></i> Quản trị (Admin)
+                      </Link>
+                    </li>
+                  )}
+                  <li>
+                    <Link to={`/user/${user?.username}`}>
+                      <i className="fa fa-pencil"></i> Sửa hồ sơ
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/tickets/new">
+                      <i className="fa fa-bug"></i> Báo cáo sự cố
+                    </Link>
+                  </li>
+                  <li
+                    className="nav-dropdown-divider"
+                    style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '6px 0' }}
+                  ></li>
+                  <li>
+                    <div
+                      className="nav-settings-row"
+                      style={{
+                        padding: '8px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span className="nav-settings-lbl" style={{ fontSize: '13px', color: '#64748b' }}>
+                        Giao diện
+                      </span>
+                      <span className="nav-seg">
+                        <span
+                          onClick={() => setThemeState('light')}
+                          className={`nav-seg-btn ${theme === 'light' ? 'active' : ''}`}
+                          role="button"
+                        >
+                          <i className="fa fa-sun-o"></i>
+                        </span>
+                        <span
+                          onClick={() => setThemeState('dark')}
+                          className={`nav-seg-btn ${theme === 'dark' ? 'active' : ''}`}
+                          role="button"
+                        >
+                          <i className="fa fa-moon-o"></i>
+                        </span>
+                      </span>
+                    </div>
+                  </li>
+                  <li>
+                    <div
+                      className="nav-settings-row"
+                      style={{
+                        padding: '8px 16px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <span className="nav-settings-lbl" style={{ fontSize: '13px', color: '#64748b' }}>
+                        Ngôn ngữ
+                      </span>
+                      <span className="nav-seg">
+                        <span className="nav-seg-btn active">VI</span>
+                        <span className="nav-seg-btn">EN</span>
+                      </span>
+                    </div>
+                  </li>
+                  <li
+                    className="nav-dropdown-divider"
+                    style={{ height: '1px', background: 'rgba(255,255,255,0.08)', margin: '6px 0' }}
+                  ></li>
+                  <li>
+                    <button onClick={logout} className="nav-logout-btn">
+                      <i className="fa fa-sign-out"></i> Đăng xuất
+                    </button>
+                  </li>
+                </ul>
+              </li>
+            </ul>
           )}
         </span>
       </div>
