@@ -47,6 +47,10 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         // Submission routes
         .route("/submissions", get(submissions::list_submissions_handler))
         .route("/submission/:id", get(submissions::get_submission_handler))
+        .route(
+            "/submission/:id/rejudge",
+            post(submissions::rejudge_submission_handler),
+        )
         // Contest routes
         .route("/contests", get(contests::list_contests_handler))
         .route("/contest/:key", get(contests::get_contest_handler))

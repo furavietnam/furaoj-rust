@@ -23,22 +23,9 @@ export function LoginPage(): JSX.Element {
     try {
       await login(username, password);
       navigate('/');
-    } catch {
-      if (username === 'admin' && password === 'admin123') {
-        const dummyUser = {
-          id: 1,
-          username: 'admin',
-          email: 'admin@furaoj.org',
-          is_staff: true,
-          is_superuser: true,
-          rating: 2450,
-        };
-        localStorage.setItem('furaoj_token', 'demo_token_admin');
-        localStorage.setItem('furaoj_user', JSON.stringify(dummyUser));
-        window.location.href = '/';
-      } else {
-        setError('Tên đăng nhập hoặc mật khẩu không chính xác.');
-      }
+    } catch (err: any) {
+      const msg = err.response?.data?.error || err.response?.data?.message || 'Tên đăng nhập hoặc mật khẩu không chính xác.';
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

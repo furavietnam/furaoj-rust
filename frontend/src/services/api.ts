@@ -157,6 +157,11 @@ export async function fetchUser(username: string): Promise<User> {
   return response.data;
 }
 
+export async function registerUser(data: { username: string; email?: string; password: string }): Promise<any> {
+  const response = await apiClient.post('/auth/register', data);
+  return response.data;
+}
+
 export const api = {
   getProblems: fetchProblems,
   getProblem: fetchProblem,
@@ -169,6 +174,7 @@ export const api = {
   getUsers: fetchUsers,
   getUser: fetchUser,
   login: loginUser,
+  register: registerUser,
   getMe: fetchCurrentUser,
   getJudges: () => apiClient.get('/judges').then((r) => r.data),
   getLanguages: () => apiClient.get('/languages').then((r) => r.data),

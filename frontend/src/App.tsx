@@ -13,8 +13,11 @@ import { ScoreboardPage } from './pages/ScoreboardPage';
 import { UsersPage } from './pages/UsersPage';
 import { UserProfilePage } from './pages/UserProfilePage';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 import { JudgeStatusPage } from './pages/JudgeStatusPage';
 import { AdminPage } from './pages/AdminPage';
+import { CustomCheckersPage } from './pages/CustomCheckersPage';
+import { AboutPage } from './pages/AboutPage';
 
 /**
  * Logic: Root application router mapping URL paths to page views wrapped in AuthProvider and AppShell.
@@ -38,9 +41,14 @@ export function App(): JSX.Element {
             <Route path="/users" element={<UsersPage />} />
             <Route path="/user/:username" element={<UserProfilePage />} />
             <Route path="/status" element={<JudgeStatusPage />} />
+            <Route path="/custom_checkers" element={<CustomCheckersPage />} />
+            <Route path="/custom_checkers/" element={<CustomCheckersPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/about/" element={<AboutPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/admin/" element={<AdminPage />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
           </Routes>
         </AppShell>
       </BrowserRouter>
