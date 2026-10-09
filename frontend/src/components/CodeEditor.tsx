@@ -12,10 +12,17 @@ interface CodeEditorProps {
 
 const SUPPORTED_LANGUAGES = [
   { id: 'cpp', name: 'C++ 20 (GCC 13)', monacoLang: 'cpp' },
+  { id: 'cppthemis', name: 'C++ (Themis - 64MB Stack)', monacoLang: 'cpp' },
   { id: 'python', name: 'Python 3.12 (CPython)', monacoLang: 'python' },
   { id: 'rust', name: 'Rust 2021 (rustc)', monacoLang: 'rust' },
   { id: 'c', name: 'C11 (GCC 13)', monacoLang: 'c' },
+  { id: 'pas', name: 'Pascal (Free Pascal)', monacoLang: 'pascal' },
+  { id: 'pasthemis', name: 'Pascal (Themis - 64MB Stack)', monacoLang: 'pascal' },
   { id: 'java', name: 'Java 21 (OpenJDK)', monacoLang: 'java' },
+  { id: 'go', name: 'Go 1.22', monacoLang: 'go' },
+  { id: 'kotlin', name: 'Kotlin', monacoLang: 'kotlin' },
+  { id: 'nodejs', name: 'JavaScript (Node.js)', monacoLang: 'javascript' },
+  { id: 'scratch', name: 'Scratch 3.0 (sb3)', monacoLang: 'plaintext' },
 ];
 
 /**

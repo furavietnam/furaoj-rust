@@ -96,6 +96,54 @@ public class Main {
         }
     }
 }`,
+  cppthemis: `#include <iostream>
+using namespace std;
+
+int main() {
+    #ifdef THEMIS
+    // freopen("task.inp", "r", stdin);
+    // freopen("task.out", "w", stdout);
+    #endif
+    long long a, b;
+    if (cin >> a >> b) {
+        cout << a + b << "\\n";
+    }
+    return 0;
+}`,
+  pas: `program APlusB;
+var
+  a, b: Int64;
+begin
+  if not SeekEof then
+  begin
+    Read(a, b);
+    WriteLn(a + b);
+  end;
+end.`,
+  pasthemis: `program APlusBThemis;
+var
+  a, b: Int64;
+begin
+  {$IFDEF THEMIS}
+  // Assign(input, 'task.inp'); Reset(input);
+  // Assign(output, 'task.out'); Rewrite(output);
+  {$ENDIF}
+  if not SeekEof then
+  begin
+    Read(a, b);
+    WriteLn(a + b);
+  end;
+end.`,
+  go: `package main
+
+import "fmt"
+
+func main() {
+    var a, b int64
+    if _, err := fmt.Scan(&a, &b); err == nil {
+        fmt.Println(a + b)
+    }
+}`,
 };
 
 /**

@@ -201,8 +201,17 @@ pub async fn initialize_schema(pool: &PgPool) -> Result<(), sqlx::Error> {
     INSERT INTO judge_language (id, key, name, short_name, common_name, ace)
     VALUES 
         (1, 'py3', 'Python 3.12', 'Python 3', 'Python', 'python'),
-        (2, 'cpp17', 'C++ 17 (GCC)', 'C++ 17', 'C++', 'c_cpp'),
-        (3, 'rust', 'Rust 1.82', 'Rust', 'Rust', 'rust')
+        (2, 'cpp20', 'C++ 20 (GCC)', 'C++ 20', 'C++', 'c_cpp'),
+        (3, 'rust', 'Rust 2021', 'Rust', 'Rust', 'rust'),
+        (4, 'c', 'C11 (GCC)', 'C11', 'C', 'c_cpp'),
+        (5, 'cppthemis', 'C++ (Themis)', 'C++ Themis', 'C++', 'c_cpp'),
+        (6, 'pasthemis', 'Pascal (Themis)', 'Pas Themis', 'Pascal', 'pascal'),
+        (7, 'pas', 'Pascal (FPC)', 'Pascal', 'Pascal', 'pascal'),
+        (8, 'java', 'Java 21', 'Java 21', 'Java', 'java'),
+        (9, 'go', 'Go', 'Go', 'Go', 'golang'),
+        (10, 'scratch', 'Scratch 3.0', 'Scratch', 'Scratch', 'plain_text'),
+        (11, 'nodejs', 'Node.js', 'Node.js', 'JavaScript', 'javascript'),
+        (12, 'kotlin', 'Kotlin', 'Kotlin', 'Kotlin', 'kotlin')
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO judge_problem (id, code, name, description, time_limit, memory_limit, points)
