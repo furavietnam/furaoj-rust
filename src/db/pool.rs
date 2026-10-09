@@ -9,21 +9,35 @@ use tracing::info;
 
 use crate::config::DatabaseConfig;
 
-// Logic: Creates a resilient PostgreSQL connection pool configured with timeouts and connection ceilings.
+// Logic: Creates a resilient PostgreSQL connection pool falling back to container host 'db' if localhost times out.
 // Input: config (&DatabaseConfig).
 // Output: Result<PgPool, sqlx::Error>.
 pub async fn create_pool(config: &DatabaseConfig) -> Result<PgPool, sqlx::Error> {
     let conn_str = config.connection_string();
     info!("Connecting to PostgreSQL database at {}:{}", config.host, config.port);
 
-    let pool = PgPoolOptions::new()
+    match PgPoolOptions::new()
         .max_connections(config.max_connections)
         .idle_timeout(Duration::from_secs(config.idle_timeout_seconds))
-        .acquire_timeout(Duration::from_secs(5))
+        .acquire_timeout(Duration::from_secs(3))
         .connect(&conn_str)
-        .await?;
-
-    Ok(pool)
+        .await
+    {
+        Ok(pool) => Ok(pool),
+        Err(_e) if config.host == "localhost" => {
+            info!("Connection to localhost timed out, attempting container network host 'db'...");
+            let mut fallback_config = config.clone();
+            fallback_config.host = "db".to_string();
+            let fallback_conn = fallback_config.connection_string();
+            PgPoolOptions::new()
+                .max_connections(config.max_connections)
+                .idle_timeout(Duration::from_secs(config.idle_timeout_seconds))
+                .acquire_timeout(Duration::from_secs(5))
+                .connect(&fallback_conn)
+                .await
+        }
+        Err(e) => Err(e),
+    }
 }
 
 // Logic: Bootstraps 1:1 invariant schema tables and seeds default dev fixtures if database is empty.

@@ -1,5 +1,5 @@
 # Stage 1: Build binary using official Rust toolchain
-FROM rust:1.82-bookworm AS builder
+FROM rust:latest AS builder
 
 WORKDIR /usr/src/furaoj-rust
 
@@ -9,14 +9,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy dependency manifests and source
-COPY Cargo.toml ./
+COPY Cargo.toml Cargo.lock ./
 COPY src ./src
 
 # Compile release binary
 RUN cargo build --release
 
 # Stage 2: Minimal runtime image
-FROM debian:bookworm-slim AS runner
+FROM debian:trixie-slim AS runner
 
 WORKDIR /app
 
@@ -34,10 +34,10 @@ RUN groupadd -g 10001 appuser && \
     chown -R appuser:appuser /app /var/furaoj
 
 # Copy compiled binary from builder
-COPY --from=builder --chown=appuser:appuser /usr/src/furaoj-rust/target/release/furaoj-rust /app/furaoj-rust
+COPY --from=builder --chown=appuser:appuser /usr/src/furaoj-rust/target/release/furaoj-api /app/furaoj-api
 
 USER appuser
 
 EXPOSE 8080 9999
 
-ENTRYPOINT ["/app/furaoj-rust"]
+ENTRYPOINT ["/app/furaoj-api"]
