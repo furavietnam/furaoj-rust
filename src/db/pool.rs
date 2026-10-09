@@ -219,24 +219,28 @@ pub async fn initialize_schema(pool: &PgPool) -> Result<(), sqlx::Error> {
         1,
         'aplusb',
         'A Plus B Problem',
-        'Given two non-negative integers $A$ and $B$, compute and output their sum:
+        'Given $N$ pairs of integers $A$ and $B$, compute and output their sum:
 
 $$S = A + B$$
 
 ### Input Specification
-The input contains a single line with two space-separated integers $A$ and $B$ ($0 \le A, B \le 10^9$).
+The first line of input contains an integer $N$ ($1 \le N \le 100\,000$), the number of test cases.
+The next $N$ lines each contain two space-separated integers $A$ and $B$ ($-10^9 \le A, B \le 10^9$).
 
 ### Output Specification
-Output the single integer representing the sum $S$.
+For each test case, output the single integer representing the sum $S$ on a separate line.
 
 ### Sample Input
 ```
-3 4
+2
+5 5
+1 1
 ```
 
 ### Sample Output
 ```
-7
+10
+2
 ```',
         1.0,
         256,

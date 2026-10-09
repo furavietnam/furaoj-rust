@@ -53,7 +53,6 @@ pub fn create_router(state: Arc<AppState>) -> Router {
 
     Router::new()
         .route("/health", get(health::health_check))
-        .route("/api/health", get(health::health_check))
         .nest("/api/v2", api_v2.clone())
         .nest("/api", api_v2)
         .route("/ws/live", get(ws_live_handler))

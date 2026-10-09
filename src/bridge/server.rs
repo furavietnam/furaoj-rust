@@ -88,11 +88,16 @@ pub async fn start_bridge_server(
                 let packet = serde_json::json!({
                     "name": "submission-request",
                     "submission-id": job.submission_id,
+                    "submission_id": job.submission_id,
                     "problem-id": job.problem_code,
+                    "problem_id": job.problem_code,
                     "language": job.language,
                     "source": job.source,
+                    "source_code": job.source,
                     "time-limit": job.time_limit,
+                    "time_limit": (job.time_limit * 1000.0) as u64,
                     "memory-limit": job.memory_limit,
+                    "memory_limit": job.memory_limit,
                     "short-circuit": false,
                     "meta": {}
                 });
@@ -256,9 +261,14 @@ async fn handle_judge_packet(
     payload: &serde_json::Value,
     manager: &BridgeManager,
 ) {
+    let sub_id = payload
+        .get("submission-id")
+        .or_else(|| payload.get("submission_id"))
+        .and_then(|v| v.as_i64());
+
     match packet_name {
         "submission-acknowledged" => {
-            if let Some(sub_id) = payload.get("submission-id").and_then(|v| v.as_i64()) {
+            if let Some(sub_id) = sub_id {
                 let _ = sqlx::query("UPDATE judge_submission SET status = 'P' WHERE id = $1")
                     .bind(sub_id as i32)
                     .execute(&manager.pool)
@@ -266,7 +276,7 @@ async fn handle_judge_packet(
             }
         }
         "grading-begin" => {
-            if let Some(sub_id) = payload.get("submission-id").and_then(|v| v.as_i64()) {
+            if let Some(sub_id) = sub_id {
                 let _ = sqlx::query("UPDATE judge_submission SET status = 'G' WHERE id = $1")
                     .bind(sub_id as i32)
                     .execute(&manager.pool)
@@ -282,53 +292,66 @@ async fn handle_judge_packet(
             }
         }
         "test-case-status" => {
-            if let Some(sub_id) = payload.get("submission-id").and_then(|v| v.as_i64()) {
+            if let Some(sub_id) = sub_id {
+                let mut case_entries = Vec::new();
+
                 if let Some(cases) = payload.get("cases").and_then(|v| v.as_array()) {
                     for case in cases {
-                        let position = case.get("position").and_then(|v| v.as_i64()).unwrap_or(1) as i32;
-                        let status = case.get("status").and_then(|v| v.as_str()).unwrap_or("SC");
-                        let time = case.get("time").and_then(|v| v.as_f64());
-                        let memory = case.get("memory").and_then(|v| v.as_i64()).map(|m| m as i32);
-                        let points = case.get("points").and_then(|v| v.as_f64());
+                        let position = case.get("position").or_else(|| case.get("case_index")).and_then(|v| v.as_i64()).unwrap_or(1) as i32;
+                        let status = case.get("status").or_else(|| case.get("verdict")).and_then(|v| v.as_str()).unwrap_or("SC");
+                        let time = case.get("time").and_then(|v| v.as_f64()).or_else(|| case.get("time_ms").and_then(|v| v.as_f64()).map(|ms| ms / 1000.0));
+                        let memory = case.get("memory").or_else(|| case.get("memory_kb")).and_then(|v| v.as_i64()).map(|m| m as i32);
+                        let points = case.get("points").or_else(|| case.get("score")).and_then(|v| v.as_f64());
                         let output = case.get("output").and_then(|v| v.as_str());
-
-                        let _ = sqlx::query(
-                            r#"
-                            INSERT INTO judge_submissiontestcase (submission_id, case_num, status, time, memory, points, output)
-                            VALUES ($1, $2, $3, $4, $5, $6, $7)
-                            ON CONFLICT DO NOTHING
-                            "#
-                        )
-                        .bind(sub_id as i32)
-                        .bind(position)
-                        .bind(status)
-                        .bind(time)
-                        .bind(memory)
-                        .bind(points)
-                        .bind(output)
-                        .execute(&manager.pool)
-                        .await;
-
-                        manager.hub.broadcast(LiveEvent {
-                            event: "submission_case_update".to_string(),
-                            data: serde_json::json!({
-                                "submission_id": sub_id,
-                                "case": position,
-                                "status": status,
-                                "time": time,
-                                "memory": memory,
-                            }),
-                        });
+                        case_entries.push((position, status, time, memory, points, output));
                     }
+                } else if payload.get("case_index").is_some() || payload.get("position").is_some() {
+                    let position = payload.get("position").or_else(|| payload.get("case_index")).and_then(|v| v.as_i64()).unwrap_or(1) as i32;
+                    let status = payload.get("status").or_else(|| payload.get("verdict")).and_then(|v| v.as_str()).unwrap_or("SC");
+                    let time = payload.get("time").and_then(|v| v.as_f64()).or_else(|| payload.get("time_ms").and_then(|v| v.as_f64()).map(|ms| ms / 1000.0));
+                    let memory = payload.get("memory").or_else(|| payload.get("memory_kb")).and_then(|v| v.as_i64()).map(|m| m as i32);
+                    let points = payload.get("points").or_else(|| payload.get("score")).and_then(|v| v.as_f64());
+                    let output = payload.get("output").and_then(|v| v.as_str());
+                    case_entries.push((position, status, time, memory, points, output));
+                }
+
+                for (position, status, time, memory, points, output) in case_entries {
+                    let _ = sqlx::query(
+                        r#"
+                        INSERT INTO judge_submissiontestcase (submission_id, case_num, status, time, memory, points, output)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7)
+                        ON CONFLICT DO NOTHING
+                        "#
+                    )
+                    .bind(sub_id as i32)
+                    .bind(position)
+                    .bind(status)
+                    .bind(time)
+                    .bind(memory)
+                    .bind(points)
+                    .bind(output)
+                    .execute(&manager.pool)
+                    .await;
+
+                    manager.hub.broadcast(LiveEvent {
+                        event: "submission_case_update".to_string(),
+                        data: serde_json::json!({
+                            "submission_id": sub_id,
+                            "case": position,
+                            "status": status,
+                            "time": time,
+                            "memory": memory,
+                        }),
+                    });
                 }
             }
         }
         "grading-end" => {
-            if let Some(sub_id) = payload.get("submission-id").and_then(|v| v.as_i64()) {
-                let result = payload.get("result").and_then(|v| v.as_str()).unwrap_or("AC");
-                let points = payload.get("points").and_then(|v| v.as_f64()).unwrap_or(0.0);
-                let time = payload.get("time").and_then(|v| v.as_f64());
-                let memory = payload.get("memory").and_then(|v| v.as_i64()).map(|m| m as i32);
+            if let Some(sub_id) = sub_id {
+                let result = payload.get("result").or_else(|| payload.get("verdict")).and_then(|v| v.as_str()).unwrap_or("AC");
+                let points = payload.get("points").or_else(|| payload.get("score")).and_then(|v| v.as_f64()).unwrap_or(0.0);
+                let time = payload.get("time").and_then(|v| v.as_f64()).or_else(|| payload.get("time_ms").and_then(|v| v.as_f64()).map(|ms| ms / 1000.0));
+                let memory = payload.get("memory").or_else(|| payload.get("memory_kb")).and_then(|v| v.as_i64()).map(|m| m as i32);
 
                 let _ = sqlx::query(
                     r#"

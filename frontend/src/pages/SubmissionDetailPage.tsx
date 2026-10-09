@@ -17,9 +17,13 @@ using namespace std;
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
-    long long a, b;
-    if (cin >> a >> b) {
-        cout << a + b << "\\n";
+    int n;
+    if (cin >> n) {
+        while (n--) {
+            long long a, b;
+            cin >> a >> b;
+            cout << a + b << "\\n";
+        }
     }
     return 0;
 }`,
@@ -32,11 +36,9 @@ int main() {
   problem_title: 'A + B Problem',
   username: 'admin',
   test_cases_result: [
-    { index: 1, verdict: 'AC', time_ms: 2, memory_kb: 1420, points: 20 },
+    { index: 1, verdict: 'AC', time_ms: 2, memory_kb: 1420, points: 5 },
     { index: 2, verdict: 'AC', time_ms: 3, memory_kb: 1510, points: 20 },
-    { index: 3, verdict: 'AC', time_ms: 4, memory_kb: 1640, points: 20 },
-    { index: 4, verdict: 'AC', time_ms: 2, memory_kb: 1720, points: 20 },
-    { index: 5, verdict: 'AC', time_ms: 3, memory_kb: 1980, points: 20 },
+    { index: 3, verdict: 'AC', time_ms: 4, memory_kb: 1640, points: 75 },
   ],
 };
 

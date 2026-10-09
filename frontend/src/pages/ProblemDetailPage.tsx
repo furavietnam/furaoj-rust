@@ -45,20 +45,29 @@ using namespace std;
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
-    long long a, b;
-    if (cin >> a >> b) {
-        cout << a + b << "\\n";
+    int n;
+    if (cin >> n) {
+        while (n--) {
+            long long a, b;
+            cin >> a >> b;
+            cout << a + b << "\\n";
+        }
     }
     return 0;
 }`,
   python: `import sys
 
 def main():
-    line = sys.stdin.read().split()
-    if len(line) >= 2:
-        a = int(line[0])
-        b = int(line[1])
+    tokens = sys.stdin.read().split()
+    if not tokens:
+        return
+    n = int(tokens[0])
+    idx = 1
+    for _ in range(n):
+        a = int(tokens[idx])
+        b = int(tokens[idx + 1])
         print(a + b)
+        idx += 2
 
 if __name__ == '__main__':
     main()
@@ -69,18 +78,26 @@ fn main() {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input).unwrap();
     let mut iter = input.split_whitespace();
-    if let (Some(a), Some(b)) = (iter.next(), iter.next()) {
-        let a: i64 = a.parse().unwrap();
-        let b: i64 = b.parse().unwrap();
-        println!("{}", a + b);
+    if let Some(n_str) = iter.next() {
+        let n: usize = n_str.parse().unwrap();
+        for _ in 0..n {
+            let a: i64 = iter.next().unwrap().parse().unwrap();
+            let b: i64 = iter.next().unwrap().parse().unwrap();
+            println!("{}", a + b);
+        }
     }
 }`,
   c: `#include <stdio.h>
 
 int main() {
-    long long a, b;
-    if (scanf("%lld %lld", &a, &b) == 2) {
-        printf("%lld\\n", a + b);
+    int n;
+    if (scanf("%d", &n) == 1) {
+        while (n--) {
+            long long a, b;
+            if (scanf("%lld %lld", &a, &b) == 2) {
+                printf("%lld\\n", a + b);
+            }
+        }
     }
     return 0;
 }`,
@@ -89,10 +106,13 @@ int main() {
 public class Main {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
-        if (sc.hasNextLong()) {
-            long a = sc.nextLong();
-            long b = sc.nextLong();
-            System.out.println(a + b);
+        if (sc.hasNextInt()) {
+            int n = sc.nextInt();
+            for (int i = 0; i < n; i++) {
+                long a = sc.nextLong();
+                long b = sc.nextLong();
+                System.out.println(a + b);
+            }
         }
     }
 }`,
@@ -104,24 +124,36 @@ int main() {
     // freopen("task.inp", "r", stdin);
     // freopen("task.out", "w", stdout);
     #endif
-    long long a, b;
-    if (cin >> a >> b) {
-        cout << a + b << "\\n";
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+    int n;
+    if (cin >> n) {
+        while (n--) {
+            long long a, b;
+            cin >> a >> b;
+            cout << a + b << "\\n";
+        }
     }
     return 0;
 }`,
   pas: `program APlusB;
 var
+  n, i: LongInt;
   a, b: Int64;
 begin
   if not SeekEof then
   begin
-    Read(a, b);
-    WriteLn(a + b);
+    Read(n);
+    for i := 1 to n do
+    begin
+      Read(a, b);
+      WriteLn(a + b);
+    end;
   end;
 end.`,
   pasthemis: `program APlusBThemis;
 var
+  n, i: LongInt;
   a, b: Int64;
 begin
   {$IFDEF THEMIS}
@@ -130,8 +162,12 @@ begin
   {$ENDIF}
   if not SeekEof then
   begin
-    Read(a, b);
-    WriteLn(a + b);
+    Read(n);
+    for i := 1 to n do
+    begin
+      Read(a, b);
+      WriteLn(a + b);
+    end;
   end;
 end.`,
   go: `package main
@@ -139,9 +175,13 @@ end.`,
 import "fmt"
 
 func main() {
-    var a, b int64
-    if _, err := fmt.Scan(&a, &b); err == nil {
-        fmt.Println(a + b)
+    var n int
+    if _, err := fmt.Scan(&n); err == nil {
+        for i := 0; i < n; i++ {
+            var a, b int64
+            fmt.Scan(&a, &b)
+            fmt.Println(a + b)
+        }
     }
 }`,
 };

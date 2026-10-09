@@ -116,14 +116,24 @@ pub async fn submit_problem_handler(
         }
     }
 
+    let lang_lower = payload.language.trim().to_lowercase();
     let lang_id: i32 = sqlx::query_scalar(
-        "SELECT id FROM judge_language WHERE key = $1 OR common_name = $1 LIMIT 1"
+        r#"
+        SELECT id FROM judge_language 
+        WHERE LOWER(key) = $1 
+           OR LOWER(common_name) = $1
+           OR ($1 = 'cpp' AND LOWER(key) LIKE 'cpp%')
+           OR ($1 = 'python' AND LOWER(key) LIKE 'py%')
+           OR ($1 = 'pascal' AND LOWER(key) LIKE 'pas%')
+        ORDER BY id ASC
+        LIMIT 1
+        "#
     )
-    .bind(&payload.language)
+    .bind(&lang_lower)
     .fetch_optional(&state.pool)
     .await
     .unwrap_or(None)
-    .unwrap_or(1);
+    .unwrap_or(2);
 
     let profile_id: i32 = sqlx::query_scalar(
         "SELECT id FROM judge_profile WHERE user_id = $1"

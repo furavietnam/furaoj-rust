@@ -41,7 +41,7 @@ services:
     volumes:
       - ./config.json:/app/config.json:ro
       - ./local_settings.json:/app/local_settings.json:ro
-      - problem_data:/var/furaoj/problems:ro
+      - ./problems:/var/furaoj/problems:ro
       - media_uploads:/var/furaoj/media:rw
     ports:
       - "8080:8080"
@@ -80,11 +80,10 @@ services:
         condition: service_healthy
     volumes:
       - ./judge_config.json:/app/judge_config.json:ro
-      - problem_data:/var/furaoj/problems:ro
+      - ./problems:/var/furaoj/problems:ro
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
 
 volumes:
   postgres_data:
   redis_data:
-  problem_data:
   media_uploads:
