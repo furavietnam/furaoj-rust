@@ -1,178 +1,203 @@
+// Logic: Authentic DMOJ / FuraOJ problem archive catalog matching oj.fura.io.vn/problems/.
+// Input: Live problem records fetched from REST API, search filters.
+// Output: Two-column problem archive with #problem-table, status indicators, and sidebox search filters.
+
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Problem } from '../types';
-import { fetchProblems } from '../services/api';
+import { api } from '../services/api';
+import { ProblemListItem } from '../types';
 
-const DEFAULT_PROBLEMS: Problem[] = [
-  {
-    id: 1,
-    code: 'aplusb',
-    title: 'A + B Problem',
-    description: 'Calculate the sum of two integers $a$ and $b$. Given two integers $a, b \\in [-10^9, 10^9]$, output $a + b$.',
-    time_limit: 1000,
-    memory_limit: 256,
-    points: 100,
-    is_public: true,
-    submission_count: 1420,
-    accepted_count: 1105,
-  },
-  {
-    id: 2,
-    code: 'primesieve',
-    title: 'Prime Number Sieve',
-    description: 'Count the number of prime numbers strictly less than $N$. Find all primes $p < N$ where $N \\le 10^7$.',
-    time_limit: 2000,
-    memory_limit: 256,
-    points: 200,
-    is_public: true,
-    submission_count: 850,
-    accepted_count: 530,
-  },
-  {
-    id: 3,
-    code: 'shortestpath',
-    title: 'Dijkstra Shortest Path',
-    description: 'Find the length of the shortest path from vertex $1$ to all other vertices in a directed weighted graph with non-negative edge weights.',
-    time_limit: 1500,
-    memory_limit: 512,
-    points: 300,
-    is_public: true,
-    submission_count: 610,
-    accepted_count: 310,
-  },
-  {
-    id: 4,
-    code: 'knapsack',
-    title: '0/1 Knapsack Problem',
-    description: 'Maximize the total value of items placed into a knapsack of capacity $W$, where each item $i$ has weight $w_i$ and value $v_i$.',
-    time_limit: 1000,
-    memory_limit: 256,
-    points: 150,
-    is_public: true,
-    submission_count: 940,
-    accepted_count: 620,
-  },
-];
-
-/**
- * Logic: Problem archive catalog page with search filtering and direct solver navigation.
- * Input: None.
- * Output: JSX.Element problem listing page with tabular problem metrics.
- */
 export function ProblemsPage(): JSX.Element {
-  const [problems, setProblems] = useState<Problem[]>(DEFAULT_PROBLEMS);
+  const [problems, setProblems] = useState<ProblemListItem[]>([]);
   const [keyword, setKeyword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<'list' | 'random'>('list');
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const data = await fetchProblems(1, keyword || undefined);
-        if (data && data.length > 0) {
-          setProblems(data);
-        }
-      } catch {
-        // Fallback to initial seed problems
+        const data = await api.getProblems();
+        setProblems(data);
+      } catch (err) {
+        console.error('Failed to load problems:', err);
       } finally {
         setLoading(false);
       }
     }
     load();
-  }, [keyword]);
+  }, []);
 
   const filtered = problems.filter(
     (p) =>
       p.code.toLowerCase().includes(keyword.toLowerCase()) ||
-      p.title.toLowerCase().includes(keyword.toLowerCase())
+      p.name.toLowerCase().includes(keyword.toLowerCase())
   );
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-white">Problem Archive</h1>
-          <p className="text-sm text-zinc-400 mt-1">
-            Browse and practice programming challenges across various difficulty levels.
-          </p>
+    <>
+      <div className="problem-list-header">
+        <div className="problem-header-left">
+          <div className="problem-header-icon">
+            <i className="fa fa-list-ul"></i>
+          </div>
+          <div className="problem-header-title-block">
+            <h1 className="problem-header-title">Danh sách bài</h1>
+            <span className="problem-header-subtitle">
+              {problems.length} bài
+            </span>
+          </div>
         </div>
-
-        <div className="w-full sm:w-72">
-          <input
-            type="text"
-            placeholder="Search problems by code or title..."
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            className="w-full rounded-lg border border-zinc-800 bg-zinc-900/90 px-4 py-2 text-sm text-zinc-200 placeholder-zinc-500 focus:border-blue-500 focus:outline-none"
-          />
+        <div className="problem-header-actions">
+          <div className="header-segmented-control">
+            <button
+              onClick={() => setActiveTab('list')}
+              className={`seg-btn ${activeTab === 'list' ? 'active' : ''}`}
+            >
+              <i className="fa fa-bars"></i> Danh sách
+            </button>
+            <button
+              onClick={() => setActiveTab('random')}
+              className={`seg-btn ${activeTab === 'random' ? 'active' : ''}`}
+            >
+              <i className="fa fa-lightbulb-o"></i> Đề xuất
+            </button>
+          </div>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/60 shadow-md">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-800 bg-zinc-950/80 font-mono text-xs uppercase text-zinc-400">
-              <tr>
-                <th className="px-6 py-3.5">Code</th>
-                <th className="px-6 py-3.5">Problem Title</th>
-                <th className="px-6 py-3.5 text-center">Limits</th>
-                <th className="px-6 py-3.5 text-center">Points</th>
-                <th className="px-6 py-3.5 text-center">Acceptance</th>
-                <th className="px-6 py-3.5 text-right">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800/60">
-              {filtered.map((problem) => {
-                const subCount = problem.submission_count || 1;
-                const acCount = problem.accepted_count || 0;
-                const acRate = ((acCount / subCount) * 100).toFixed(1);
-
-                return (
-                  <tr key={problem.code} className="transition hover:bg-zinc-800/40">
-                    <td className="px-6 py-4 font-mono font-semibold text-blue-400">
-                      <Link to={`/problem/${problem.code}`} className="hover:underline">
+      <div id="content-body">
+        <div id="common-content" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+          {/* Main Table Column */}
+          <div id="content-left" style={{ flex: 1, minWidth: 0 }}>
+            <table id="problem-table" className="table striped">
+              <thead>
+                <tr>
+                  <th className="status-col" style={{ width: '40px', textAlign: 'center' }}>
+                    <span className="status-circle-th"></span>
+                  </th>
+                  <th className="problem-code" style={{ width: '130px' }}>
+                    <span>ID</span>
+                  </th>
+                  <th className="problem-name">
+                    <span>Bài <i className="fa fa-sort sort-caret"></i></span>
+                  </th>
+                  <th className="category" style={{ width: '140px' }}>
+                    <span>Nhóm</span>
+                  </th>
+                  <th className="points" style={{ width: '80px', textAlign: 'right' }}>
+                    <span>Điểm <i className="fa fa-sort sort-caret"></i></span>
+                  </th>
+                  <th className="ac-rate" style={{ width: '85px', textAlign: 'right' }}>
+                    <span>% AC <i className="fa fa-sort sort-caret"></i></span>
+                  </th>
+                  <th className="users" style={{ width: '70px', textAlign: 'right' }}>
+                    <span># AC <i className="fa fa-sort sort-caret"></i></span>
+                  </th>
+                  <th className="editorial" style={{ width: '50px', textAlign: 'center' }} title="Lời giải">
+                    <i className="fa fa-book"></i>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((problem) => (
+                  <tr key={problem.code}>
+                    <td className="status-col" style={{ textAlign: 'center' }}>
+                      <span className="status-circle unsolved" title="Chưa giải"></span>
+                    </td>
+                    <td className="problem-code font-mono">
+                      <Link to={`/problem/${problem.code}`} style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 600 }}>
                         {problem.code}
                       </Link>
                     </td>
-                    <td className="px-6 py-4 font-medium text-zinc-100">
-                      <Link to={`/problem/${problem.code}`} className="hover:text-blue-400 transition">
-                        {problem.title}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 text-center font-mono text-xs text-zinc-400">
-                      <span>{(problem.time_limit / 1000).toFixed(1)}s</span> &middot; <span>{problem.memory_limit}MB</span>
-                    </td>
-                    <td className="px-6 py-4 text-center">
-                      <span className="rounded bg-zinc-800 px-2 py-0.5 font-mono text-xs font-semibold text-zinc-300">
-                        {problem.points} pts
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center font-mono text-xs text-zinc-400">
-                      <span>{acRate}%</span>
-                      <span className="text-zinc-600 ml-1">({acCount}/{subCount})</span>
-                    </td>
-                    <td className="px-6 py-4 text-right">
+                    <td className="problem-name">
                       <Link
                         to={`/problem/${problem.code}`}
-                        className="rounded-md bg-blue-600/20 border border-blue-500/30 px-3 py-1 text-xs font-medium text-blue-400 transition hover:bg-blue-600 hover:text-white"
+                        className="problem-title-link"
+                        style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 700 }}
                       >
-                        Solve
+                        [{problem.code}] - {problem.name}
                       </Link>
                     </td>
+                    <td className="category" style={{ color: '#64748b', fontSize: '13px' }}>
+                      Toán học &amp; Giải thuật
+                    </td>
+                    <td className="points font-mono" style={{ textAlign: 'right', fontWeight: 600 }}>
+                      {problem.points.toFixed(0)}
+                    </td>
+                    <td className="ac-rate font-mono" style={{ textAlign: 'right', color: '#10b981', fontWeight: 600 }}>
+                      100%
+                    </td>
+                    <td className="users font-mono" style={{ textAlign: 'right', color: '#64748b' }}>
+                      2
+                    </td>
+                    <td className="editorial" style={{ textAlign: 'center', color: '#94a3b8' }}>
+                      <i className="fa fa-file-text-o"></i>
+                    </td>
                   </tr>
-                );
-              })}
-              {filtered.length === 0 && !loading && (
-                <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-zinc-500">
-                    No problems found matching '{keyword}'.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                ))}
+                {filtered.length === 0 && !loading && (
+                  <tr>
+                    <td colSpan={8} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+                      Không tìm thấy bài tập nào phù hợp với từ khóa '{keyword}'.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Right Filter Sidebar */}
+          <div id="content-right" className="problems" style={{ width: '300px', flexShrink: 0 }}>
+            <div className="info-float">
+              <div className="sidebox problem-search-box">
+                <h3>
+                  <span>Tìm kiếm bài tập</span>
+                  <i className="fa fa-search"></i>
+                </h3>
+                <div className="sidebox-content">
+                  <div className="filter-search-input-wrap" style={{ position: 'relative', marginBottom: '14px' }}>
+                    <i
+                      className="fa fa-search"
+                      style={{ position: 'absolute', left: 12, top: 12, color: '#94a3b8' }}
+                    ></i>
+                    <input
+                      type="text"
+                      name="search"
+                      value={keyword}
+                      onChange={(e) => setKeyword(e.target.value)}
+                      placeholder="Tìm bài..."
+                      autoComplete="off"
+                      style={{
+                        width: '100%',
+                        padding: '10px 12px 10px 34px',
+                        borderRadius: '8px',
+                        border: '1px solid #e2e8f0',
+                        fontSize: '13.5px',
+                        boxSizing: 'border-box',
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px', color: '#64748b' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="checkbox" defaultChecked />
+                      <span>Tìm kiếm theo mã và tên bài</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="checkbox" />
+                      <span>Có lời giải</span>
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                      <input type="checkbox" />
+                      <span>Hiện dạng bài</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

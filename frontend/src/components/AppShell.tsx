@@ -9,12 +9,14 @@ import { Footer } from './Footer';
  */
 export function AppShell({ children }: { children: React.ReactNode }): JSX.Element {
   return (
-    <div className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
+    <>
       <Navbar />
-      <main className="flex-1 px-4 py-8 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        {children}
-      </main>
-      <Footer />
-    </div>
+      <div id="page-container">
+        <main id="content">
+          {children}
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 }

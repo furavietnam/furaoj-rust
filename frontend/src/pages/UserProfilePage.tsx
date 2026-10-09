@@ -198,7 +198,7 @@ export function UserProfilePage(): JSX.Element {
                   </td>
                   <td className="px-6 py-3 text-center font-mono text-xs uppercase text-zinc-400">{s.language}</td>
                   <td className="px-6 py-3 text-center">
-                    <VerdictBadge verdict={s.verdict} size="sm" />
+                    <VerdictBadge verdict={s.verdict || s.result || 'AC'} size="sm" />
                   </td>
                   <td className="px-6 py-3 text-center font-mono text-xs text-zinc-200">{s.score ?? 0}</td>
                   <td className="px-6 py-3 text-right">

@@ -44,7 +44,7 @@ export async function fetchCurrentUser(): Promise<User> {
  * Input: `page` (number), `keyword` (optional string).
  * Output: Promise resolving to array of Problem objects.
  */
-export async function fetchProblems(page = 1, keyword?: string): Promise<Problem[]> {
+export async function fetchProblems(page = 1, keyword?: string): Promise<any[]> {
   const response = await apiClient.get('/problems', {
     params: { page, keyword },
   });
@@ -56,23 +56,28 @@ export async function fetchProblems(page = 1, keyword?: string): Promise<Problem
  * Input: `code` (string problem identifier).
  * Output: Promise resolving to Problem object.
  */
-export async function fetchProblem(code: string): Promise<Problem> {
-  const response = await apiClient.get(`/problems/${code}`);
+export async function fetchProblem(code: string): Promise<any> {
+  const response = await apiClient.get(`/problem/${code}`);
   return response.data;
 }
 
 /**
  * Logic: Submits source code solution for asynchronous grading by Rust Judge Server.
- * Input: `submissionData` containing problem_id, language, source_code, and optional contest_id.
- * Output: Promise resolving to created Submission record with initial QU verdict.
+ * Input: `data` containing problem_code, language, source_code.
+ * Output: Promise resolving to created Submission record.
  */
 export async function submitSolution(data: {
-  problem_id: number;
+  problem_code?: string;
+  problem_id?: number;
   language: string;
   source_code: string;
   contest_id?: number | null;
-}): Promise<Submission> {
-  const response = await apiClient.post('/submissions', data);
+}): Promise<any> {
+  const code = data.problem_code || 'aplusb';
+  const response = await apiClient.post(`/problem/${code}/submit`, {
+    language: data.language,
+    source_code: data.source_code,
+  });
   return response.data;
 }
 
@@ -87,7 +92,7 @@ export async function fetchSubmissions(params?: {
   username?: string;
   verdict?: string;
   contest_id?: number;
-}): Promise<Submission[]> {
+}): Promise<any[]> {
   const response = await apiClient.get('/submissions', { params });
   return response.data;
 }
@@ -97,8 +102,8 @@ export async function fetchSubmissions(params?: {
  * Input: `id` (number submission ID).
  * Output: Promise resolving to detailed Submission object.
  */
-export async function fetchSubmission(id: number): Promise<Submission> {
-  const response = await apiClient.get(`/submissions/${id}`);
+export async function fetchSubmission(id: number): Promise<any> {
+  const response = await apiClient.get(`/submission/${id}`);
   return response.data;
 }
 
@@ -118,7 +123,7 @@ export async function fetchContests(): Promise<Contest[]> {
  * Output: Promise resolving to Contest object.
  */
 export async function fetchContest(slug: string): Promise<Contest> {
-  const response = await apiClient.get(`/contests/${slug}`);
+  const response = await apiClient.get(`/contest/${slug}`);
   return response.data;
 }
 
@@ -128,7 +133,7 @@ export async function fetchContest(slug: string): Promise<Contest> {
  * Output: Promise resolving to ScoreboardData.
  */
 export async function fetchScoreboard(slug: string): Promise<ScoreboardData> {
-  const response = await apiClient.get(`/contests/${slug}/scoreboard`);
+  const response = await apiClient.get(`/contest/${slug}/scoreboard`);
   return response.data;
 }
 
@@ -148,6 +153,21 @@ export async function fetchUsers(): Promise<User[]> {
  * Output: Promise resolving to User profile.
  */
 export async function fetchUser(username: string): Promise<User> {
-  const response = await apiClient.get(`/users/${username}`);
+  const response = await apiClient.get(`/user/${username}`);
   return response.data;
 }
+
+export const api = {
+  getProblems: fetchProblems,
+  getProblem: fetchProblem,
+  submitProblem: submitSolution,
+  getSubmissions: fetchSubmissions,
+  getSubmission: fetchSubmission,
+  getContests: fetchContests,
+  getContest: fetchContest,
+  getScoreboard: fetchScoreboard,
+  getUsers: fetchUsers,
+  getUser: fetchUser,
+  login: loginUser,
+  getMe: fetchCurrentUser,
+};

@@ -16,10 +16,21 @@ export interface User {
   solved_count?: number;
 }
 
+export interface ProblemListItem {
+  id: number;
+  code: string;
+  name: string;
+  points: number;
+  time_limit: number;
+  memory_limit: number;
+  is_public: boolean;
+}
+
 export interface Problem {
   id: number;
   code: string;
   title: string;
+  name?: string;
   description: string;
   time_limit: number;
   memory_limit: number;
@@ -41,18 +52,25 @@ export interface TestCaseResult {
 
 export interface Submission {
   id: number;
-  problem_id: number;
-  user_id: number;
+  problem_id?: number;
+  user_id?: number;
   contest_id?: number | null;
   language: string;
   source_code?: string;
-  verdict: string;
+  verdict?: string;
+  result?: string;
+  status?: string;
   time_taken?: number | null;
+  time?: number | null;
   memory_used?: number | null;
+  memory?: number | null;
   score?: number | null;
+  points?: number | null;
   error_message?: string | null;
   test_cases_result?: TestCaseResult[] | string | null;
-  created_at: string;
+  cases?: any[];
+  created_at?: string;
+  date?: string;
   problem_code?: string;
   problem_title?: string;
   username?: string;

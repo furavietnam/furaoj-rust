@@ -14,39 +14,39 @@ interface ProblemStatementProps {
  */
 export function ProblemStatement({ content }: ProblemStatementProps): JSX.Element {
   return (
-    <div className="prose prose-invert max-w-none space-y-4 text-zinc-300 leading-relaxed">
+    <div className="content-description max-w-none space-y-3 leading-relaxed">
       <ReactMarkdown
         remarkPlugins={[remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
           h1: ({ children }) => (
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-100 border-b border-zinc-800 pb-2 mb-4">
+            <h1 style={{ fontSize: '22px', fontWeight: 800, margin: '20px 0 10px 0' }}>
               {children}
             </h1>
           ),
           h2: ({ children }) => (
-            <h2 className="text-xl font-semibold text-zinc-200 mt-6 mb-3">
+            <h2 style={{ fontSize: '18px', fontWeight: 700, margin: '16px 0 8px 0' }}>
               {children}
             </h2>
           ),
           h3: ({ children }) => (
-            <h3 className="text-lg font-medium text-zinc-200 mt-4 mb-2">
+            <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '14px 0 6px 0' }}>
               {children}
             </h3>
           ),
-          p: ({ children }) => <p className="mb-4 leading-relaxed">{children}</p>,
-          ul: ({ children }) => <ul className="list-disc pl-6 space-y-1 mb-4">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal pl-6 space-y-1 mb-4">{children}</ol>,
+          p: ({ children }) => <p style={{ margin: '0 0 12px 0', lineHeight: 1.65 }}>{children}</p>,
+          ul: ({ children }) => <ul style={{ paddingLeft: '24px', margin: '0 0 12px 0' }}>{children}</ul>,
+          ol: ({ children }) => <ol style={{ paddingLeft: '24px', margin: '0 0 12px 0' }}>{children}</ol>,
           code: ({ className, children }) => {
             const isInline = !className;
             return isInline ? (
-              <code className="rounded bg-zinc-800/80 px-1.5 py-0.5 font-mono text-sm text-blue-300 border border-zinc-700/50">
+              <code style={{ background: 'rgba(100, 116, 139, 0.12)', padding: '2px 5px', borderRadius: '4px', fontFamily: '"JetBrains Mono", monospace', fontSize: '13.5px' }}>
                 {children}
               </code>
             ) : (
-              <div className="my-4 overflow-x-auto rounded-lg border border-zinc-800 bg-zinc-900/90 p-4">
-                <code className="font-mono text-sm text-zinc-200">{children}</code>
-              </div>
+              <pre style={{ background: 'rgba(15, 23, 42, 0.04)', padding: '12px 16px', borderRadius: '8px', overflowX: 'auto', border: '1px solid rgba(100, 116, 139, 0.2)', fontFamily: '"JetBrains Mono", monospace', fontSize: '13px' }}>
+                <code>{children}</code>
+              </pre>
             );
           },
           pre: ({ children }) => <div className="not-prose">{children}</div>,

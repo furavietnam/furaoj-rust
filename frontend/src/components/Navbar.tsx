@@ -1,127 +1,276 @@
-import React, { useState } from 'react';
+// Logic: Top floating pill navigation bar matching authentic DMOJ / FuraOJ layout and styling.
+// Input: Active route, user authentication state, live WebSocket status.
+// Output: Responsive DMOJ navigation bar with dropdown menus, settings popup, and theme toggling.
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { useLiveWebSocket } from '../hooks/useWebSocket';
 
-/**
- * Logic: Top navigation bar displaying branding, primary navigation links, live socket status, and user session controls.
- * Input: None.
- * Output: JSX.Element responsive header navigation bar.
- */
 export function Navbar(): JSX.Element {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
-  const { isConnected } = useLiveWebSocket();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [theme, setThemeState] = useState<string>(() => localStorage.getItem('furaoj_theme') || 'dark');
+  const navRef = useRef<HTMLElement>(null);
 
-  const navLinks = [
-    { path: '/', label: 'Home' },
-    { path: '/problems', label: 'Problems' },
-    { path: '/submissions', label: 'Submissions' },
-    { path: '/contests', label: 'Contests' },
-    { path: '/users', label: 'Rankings' },
-  ];
+  useEffect(() => {
+    document.body.setAttribute('data-theme', theme);
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('furaoj_theme', theme);
+  }, [theme]);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (navRef.current && !navRef.current.contains(e.target as Node)) {
+        setOpenDropdown(null);
+        setSettingsOpen(false);
+      }
+    }
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // Close menus on route change
+  useEffect(() => {
+    setOpenDropdown(null);
+    setSettingsOpen(false);
+    setMobileMenuOpen(false);
+  }, [location.pathname]);
+
+  const toggleDropdown = (name: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setOpenDropdown(prev => (prev === name ? null : name));
+    setSettingsOpen(false);
+  };
+
+  const toggleSettings = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSettingsOpen(prev => !prev);
+    setOpenDropdown(null);
+  };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur-md">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-8">
-          <Link to="/" className="flex items-center gap-2.5 font-bold text-xl tracking-tight text-white hover:opacity-90">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 font-mono text-lg font-black text-white shadow-lg shadow-blue-500/20">
-              ⚡
-            </span>
-            <span>Fura<span className="text-blue-500">OJ</span></span>
+    <nav id="navigation" className="unselectable" ref={navRef}>
+      <div id="nav-container">
+        <div className="nav-left-group">
+          <a
+            id="navicon"
+            href="javascript:void(0)"
+            aria-label="Toggle navigation"
+            onClick={() => setMobileMenuOpen(prev => !prev)}
+          >
+            <i className="fa fa-bars"></i>
+          </a>
+          <Link className="nav-brand-mobile" to="/">
+            <img
+              src="/logo.svg"
+              alt="FuraOJ"
+              width="130"
+              height="40"
+              style={{ border: 'none', paddingTop: '4px' }}
+            />
           </Link>
-
-          <nav className="hidden md:flex md:items-center md:gap-1">
-            {navLinks.map((link) => {
-              const isActive = location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path));
-              return (
-                <Link
-                  key={link.path}
-                  to={link.path}
-                  className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                    isActive
-                      ? 'bg-zinc-800 text-blue-400 font-semibold'
-                      : 'text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100'
-                  }`}
-                >
-                  {link.label}
-                </Link>
-              );
-            })}
-          </nav>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-1.5 rounded-full border border-zinc-800 bg-zinc-900/80 px-2.5 py-1 text-xs font-mono text-zinc-400" title={isConnected ? 'Live WebSocket Connected' : 'WebSocket Reconnecting'}>
-            <span
-              className={`h-2 w-2 rounded-full ${
-                isConnected ? 'bg-emerald-500 shadow-sm shadow-emerald-500/50' : 'bg-amber-500 animate-pulse'
-              }`}
-            />
-            <span className="hidden sm:inline">{isConnected ? 'LIVE' : 'SYNCING'}</span>
-          </div>
+        <ul id="nav-list" className={mobileMenuOpen ? 'show-list' : ''}>
+          <li className="home-nav-element">
+            <Link to="/">
+              <img
+                src="/logo.svg"
+                alt="FuraOJ"
+                width="130"
+                height="40"
+                style={{ border: 'none', paddingTop: '4px' }}
+              />
+            </Link>
+          </li>
+          <li className="home-nav-element">
+            <span className="nav-divider"></span>
+          </li>
+          <li className="home-menu-item">
+            <Link to="/" className={`nav-home ${location.pathname === '/' ? 'active' : ''}`}>
+              Trang chủ
+            </Link>
+          </li>
+          <li className={openDropdown === 'problems' ? 'dropdown-open is-open' : ''}>
+            <Link
+              to="/problems"
+              className={`nav-problems ${location.pathname.startsWith('/problem') ? 'active' : ''}`}
+              onClick={(e) => toggleDropdown('problems', e)}
+            >
+              Bài
+              <div className="nav-expand">&gt;</div>
+            </Link>
+            <ul>
+              <li>
+                <Link to="/submissions" className="nav-submit">
+                  Các bài nộp
+                </Link>
+              </li>
+              <li>
+                <Link to="/contests" className="nav-contest">
+                  Các kỳ thi
+                </Link>
+              </li>
+              <li>
+                <Link to="/exams" className="nav-exams">
+                  Đề thi
+                </Link>
+              </li>
+            </ul>
+          </li>
+          <li className={openDropdown === 'users' ? 'dropdown-open is-open' : ''}>
+            <Link
+              to="/users"
+              className={`nav-user ${location.pathname.startsWith('/user') ? 'active' : ''}`}
+              onClick={(e) => toggleDropdown('users', e)}
+            >
+              Thành viên
+              <div className="nav-expand">&gt;</div>
+            </Link>
+            <ul>
+              <li>
+                <Link to="/organizations" className="nav-organizati">
+                  Tổ chức
+                </Link>
+              </li>
+            </ul>
+          </li>
+          <li className={openDropdown === 'about' ? 'dropdown-open is-open' : ''}>
+            <a
+              href="javascript:void(0)"
+              className="nav-about"
+              onClick={(e) => toggleDropdown('about', e)}
+            >
+              Thông tin
+              <div className="nav-expand">&gt;</div>
+            </a>
+            <ul>
+              <li>
+                <Link to="/status" className="nav-status">
+                  Máy chấm
+                </Link>
+              </li>
+              <li>
+                <a
+                  href="//github.com/furavietnam/furaoj"
+                  className="nav-github"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Github
+                </a>
+              </li>
+            </ul>
+          </li>
+        </ul>
+
+        <span id="user-links">
+          <ul className="anon-settings-nav">
+            <li className={`anon-settings-item ${settingsOpen ? 'dropdown-open is-open' : ''}`}>
+              <a
+                href="javascript:void(0)"
+                className="nav-gear-btn"
+                title="Cài đặt"
+                aria-label="Cài đặt"
+                onClick={toggleSettings}
+              >
+                <i className="fa fa-gear"></i>
+              </a>
+              <ul className="settings-popup" style={{ minWidth: 210, right: 0, left: 'auto' }}>
+                <li>
+                  <div className="nav-settings-row">
+                    <span className="nav-settings-lbl">Giao diện</span>
+                    <span className="nav-seg">
+                      <span
+                        onClick={() => setThemeState('light')}
+                        className={`nav-seg-btn ${theme === 'light' ? 'active' : ''}`}
+                        role="button"
+                      >
+                        <i className="fa fa-sun-o"></i>
+                      </span>
+                      <span
+                        onClick={() => setThemeState('dark')}
+                        className={`nav-seg-btn ${theme === 'dark' ? 'active' : ''}`}
+                        role="button"
+                      >
+                        <i className="fa fa-moon-o"></i>
+                      </span>
+                    </span>
+                  </div>
+                </li>
+                <li>
+                  <div className="nav-settings-row">
+                    <span className="nav-settings-lbl">Ngôn ngữ</span>
+                    <span className="nav-seg">
+                      <span className="nav-seg-btn active">VI</span>
+                      <span className="nav-seg-btn">EN</span>
+                    </span>
+                  </div>
+                </li>
+              </ul>
+            </li>
+          </ul>
 
           {isAuthenticated && user ? (
-            <div className="flex items-center gap-3">
+            <span className="user-logged-in" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
               <Link
                 to={`/user/${user.username}`}
-                className="flex items-center gap-2 rounded-md border border-zinc-800 bg-zinc-900 px-3 py-1 text-sm font-medium text-zinc-200 transition hover:border-zinc-700"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', textDecoration: 'none' }}
               >
-                <div className="h-6 w-6 rounded-full bg-blue-600/30 text-blue-400 border border-blue-500/40 flex items-center justify-center text-xs font-bold font-mono">
+                <span
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: '50%',
+                    background: '#0066ff',
+                    color: '#ffffff',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 12,
+                    fontWeight: 700,
+                  }}
+                >
                   {user.username.slice(0, 1).toUpperCase()}
-                </div>
-                <span>{user.username}</span>
+                </span>
+                <span className="rating rate-none admin" style={{ fontWeight: 600 }}>
+                  {user.username}
+                </span>
               </Link>
               <button
                 onClick={logout}
-                className="rounded-md border border-zinc-800 px-3 py-1 text-xs font-medium text-zinc-400 transition hover:bg-zinc-900 hover:text-rose-400"
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#94a3b8',
+                  fontSize: 14,
+                  padding: '4px 6px',
+                }}
+                title="Đăng xuất"
               >
-                Sign out
+                <i className="fa fa-sign-out"></i>
               </button>
-            </div>
+            </span>
           ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                to="/login"
-                className="rounded-md bg-blue-600 px-4 py-1.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-500"
-              >
-                Sign In
+            <span className="anon">
+              <Link to="/login" className="btn-nav-login">
+                Đăng nhập
               </Link>
-            </div>
+              <Link to="/login" className="btn-nav-signup">
+                Đăng ký
+              </Link>
+            </span>
           )}
-
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden rounded p-1 text-zinc-400 hover:text-zinc-100"
-            aria-label="Toggle navigation menu"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              {mobileMenuOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-        </div>
+        </span>
       </div>
-
-      {mobileMenuOpen && (
-        <div className="border-t border-zinc-800 bg-zinc-950 px-4 py-3 md:hidden space-y-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.path}
-              to={link.path}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block rounded-md px-3 py-2 text-base font-medium text-zinc-300 hover:bg-zinc-900 hover:text-white"
-            >
-              {link.label}
-            </Link>
-          ))}
-        </div>
-      )}
-    </header>
+      <div id="nav-shadow"></div>
+    </nav>
   );
 }

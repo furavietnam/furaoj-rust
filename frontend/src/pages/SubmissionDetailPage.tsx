@@ -81,9 +81,11 @@ export function SubmissionDetailPage(): JSX.Element {
     }
   }, [lastPacket, subId]);
 
-  let testCases: TestCaseResult[] = [];
-  if (Array.isArray(submission.test_cases_result)) {
-    testCases = submission.test_cases_result as TestCaseResult[];
+  let testCases: any[] = [];
+  if (Array.isArray(submission.cases) && submission.cases.length > 0) {
+    testCases = submission.cases;
+  } else if (Array.isArray(submission.test_cases_result)) {
+    testCases = submission.test_cases_result;
   } else if (typeof submission.test_cases_result === 'string') {
     try {
       testCases = JSON.parse(submission.test_cases_result);
@@ -101,7 +103,7 @@ export function SubmissionDetailPage(): JSX.Element {
             <h1 className="text-2xl font-bold tracking-tight text-white font-mono">
               Submission #{submission.id}
             </h1>
-            <VerdictBadge verdict={submission.verdict} size="lg" />
+            <VerdictBadge verdict={submission.result || submission.verdict || 'QU'} size="lg" />
           </div>
           <div className="mt-2 flex flex-wrap items-center gap-4 text-xs font-mono text-zinc-400">
             <div>
@@ -110,7 +112,7 @@ export function SubmissionDetailPage(): JSX.Element {
                 to={`/problem/${submission.problem_code || 'aplusb'}`}
                 className="font-bold text-blue-400 hover:underline"
               >
-                {submission.problem_code || 'aplusb'} - {submission.problem_title || 'A + B Problem'}
+                {submission.problem_code || 'aplusb'}
               </Link>
             </div>
             <span>&bull;</span>
@@ -131,20 +133,20 @@ export function SubmissionDetailPage(): JSX.Element {
         <div className="flex items-center gap-6 rounded-lg border border-zinc-800 bg-zinc-950/80 px-6 py-3 font-mono text-center">
           <div>
             <div className="text-xs text-zinc-500 uppercase">Score</div>
-            <div className="text-xl font-bold text-zinc-100">{submission.score ?? 0} pts</div>
+            <div className="text-xl font-bold text-zinc-100">{(submission.points ?? submission.score ?? 0).toFixed(0)} pts</div>
           </div>
           <div className="h-8 w-px bg-zinc-800" />
           <div>
             <div className="text-xs text-zinc-500 uppercase">Runtime</div>
             <div className="text-xl font-bold text-zinc-100">
-              {submission.time_taken != null ? `${(submission.time_taken / 1000).toFixed(3)}s` : '-'}
+              {submission.time != null ? `${submission.time.toFixed(3)}s` : (submission.time_taken != null ? `${(submission.time_taken / 1000).toFixed(3)}s` : '-')}
             </div>
           </div>
           <div className="h-8 w-px bg-zinc-800" />
           <div>
             <div className="text-xs text-zinc-500 uppercase">Memory</div>
             <div className="text-xl font-bold text-zinc-100">
-              {submission.memory_used != null ? `${(submission.memory_used / 1024).toFixed(1)} MB` : '-'}
+              {submission.memory != null ? `${(submission.memory / 1024).toFixed(1)} MB` : (submission.memory_used != null ? `${(submission.memory_used / 1024).toFixed(1)} MB` : '-')}
             </div>
           </div>
         </div>

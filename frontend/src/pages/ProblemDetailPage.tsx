@@ -1,216 +1,67 @@
+// Logic: Authentic DMOJ / FuraOJ problem detail interface matching oj.fura.io.vn/problem/{code}.
+// Input: Active problem slug from route parameter, live source code edits, language selection.
+// Output: Two-column problem detail with statement KaTeX rendering, info sidebar metadata, and code editor.
+
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Problem, Submission } from '../types';
-import { fetchProblem, submitSolution } from '../services/api';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { api } from '../services/api';
 import { ProblemStatement } from '../components/ProblemStatement';
 import { CodeEditor } from '../components/CodeEditor';
 import { VerdictBadge } from '../components/VerdictBadge';
-import { useLiveWebSocket } from '../hooks/useWebSocket';
 
-const DEFAULT_PROBLEM_DETAIL: Problem = {
-  id: 1,
-  code: 'aplusb',
-  title: 'A + B Problem',
-  description: `Given two integers $a$ and $b$, compute and print the value of $a + b$.
-
-### Input Format
-The first and only line of input contains two space-separated integers $a$ and $b$ ($-10^9 \\le a, b \\le 10^9$).
-
-### Output Format
-Print a single integer representing the sum $a + b$.
-
-### Constraints
-- $-10^9 \\le a, b \\le 10^9$
-- Time Limit: 1.000s
-- Memory Limit: 256 MB
-
-### Mathematical Invariants
-Let $S = a + b$. The operation satisfies commutativity:
-$$a + b = b + a$$
-and associativity with zero identity element:
-$$\\sum_{i=1}^n x_i$$
-`,
-  time_limit: 1000,
-  memory_limit: 256,
-  points: 100,
-  is_public: true,
-  submission_count: 1420,
-  accepted_count: 1105,
-};
-
-const DEFAULT_CODE_SNIPPETS: Record<string, string> = {
+const DEFAULT_SNIPPETS: Record<string, string> = {
   cpp: `#include <iostream>
 using namespace std;
 
 int main() {
     ios_base::sync_with_stdio(false);
     cin.tie(NULL);
-    int n;
-    if (cin >> n) {
-        while (n--) {
-            long long a, b;
-            cin >> a >> b;
-            cout << a + b << "\\n";
-        }
-    }
+    // Write solution here
     return 0;
 }`,
   python: `import sys
 
 def main():
-    tokens = sys.stdin.read().split()
-    if not tokens:
+    data = sys.stdin.read().split()
+    if not data:
         return
-    n = int(tokens[0])
-    idx = 1
-    for _ in range(n):
-        a = int(tokens[idx])
-        b = int(tokens[idx + 1])
-        print(a + b)
-        idx += 2
+    # Write solution here
 
 if __name__ == '__main__':
-    main()
-`,
-  rust: `use std::io::{self, Read};
-
-fn main() {
-    let mut input = String::new();
-    io::stdin().read_to_string(&mut input).unwrap();
-    let mut iter = input.split_whitespace();
-    if let Some(n_str) = iter.next() {
-        let n: usize = n_str.parse().unwrap();
-        for _ in 0..n {
-            let a: i64 = iter.next().unwrap().parse().unwrap();
-            let b: i64 = iter.next().unwrap().parse().unwrap();
-            println!("{}", a + b);
-        }
-    }
-}`,
+    main()`,
   c: `#include <stdio.h>
 
 int main() {
-    int n;
-    if (scanf("%d", &n) == 1) {
-        while (n--) {
-            long long a, b;
-            if (scanf("%lld %lld", &a, &b) == 2) {
-                printf("%lld\\n", a + b);
-            }
-        }
-    }
+    // Write solution here
     return 0;
 }`,
-  java: `import java.util.Scanner;
-
-public class Main {
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        if (sc.hasNextInt()) {
-            int n = sc.nextInt();
-            for (int i = 0; i < n; i++) {
-                long a = sc.nextLong();
-                long b = sc.nextLong();
-                System.out.println(a + b);
-            }
-        }
-    }
-}`,
-  cppthemis: `#include <iostream>
-using namespace std;
-
-int main() {
-    #ifdef THEMIS
-    // freopen("task.inp", "r", stdin);
-    // freopen("task.out", "w", stdout);
-    #endif
-    ios_base::sync_with_stdio(false);
-    cin.tie(NULL);
-    int n;
-    if (cin >> n) {
-        while (n--) {
-            long long a, b;
-            cin >> a >> b;
-            cout << a + b << "\\n";
-        }
-    }
-    return 0;
-}`,
-  pas: `program APlusB;
-var
-  n, i: LongInt;
-  a, b: Int64;
+  pascal: `program Solution;
 begin
-  if not SeekEof then
-  begin
-    Read(n);
-    for i := 1 to n do
-    begin
-      Read(a, b);
-      WriteLn(a + b);
-    end;
-  end;
+  // Write solution here
 end.`,
-  pasthemis: `program APlusBThemis;
-var
-  n, i: LongInt;
-  a, b: Int64;
-begin
-  {$IFDEF THEMIS}
-  // Assign(input, 'task.inp'); Reset(input);
-  // Assign(output, 'task.out'); Rewrite(output);
-  {$ENDIF}
-  if not SeekEof then
-  begin
-    Read(n);
-    for i := 1 to n do
-    begin
-      Read(a, b);
-      WriteLn(a + b);
-    end;
-  end;
-end.`,
-  go: `package main
-
-import "fmt"
-
-func main() {
-    var n int
-    if _, err := fmt.Scan(&n); err == nil {
-        for i := 0; i < n; i++ {
-            var a, b int64
-            fmt.Scan(&a, &b)
-            fmt.Println(a + b)
-        }
-    }
-}`,
 };
 
-/**
- * Logic: Problem solving interface integrating Markdown KaTeX statement, Monaco IDE editor, and live verdict stream.
- * Input: None (URL parameter: `code`).
- * Output: JSX.Element responsive side-by-side problem statement and code editor.
- */
 export function ProblemDetailPage(): JSX.Element {
   const { code = 'aplusb' } = useParams<{ code: string }>();
   const navigate = useNavigate();
 
-  const [problem, setProblem] = useState<Problem>(DEFAULT_PROBLEM_DETAIL);
+  const [problem, setProblem] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
   const [language, setLanguage] = useState<string>('cpp');
-  const [sourceCode, setSourceCode] = useState<string>(DEFAULT_CODE_SNIPPETS.cpp);
+  const [sourceCode, setSourceCode] = useState<string>(DEFAULT_SNIPPETS.cpp);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [latestSubmission, setLatestSubmission] = useState<Submission | null>(null);
-  const [copiedSample, setCopiedSample] = useState<boolean>(false);
+  const [latestSubmission, setLatestSubmission] = useState<any>(null);
 
   useEffect(() => {
     async function load() {
+      setLoading(true);
       try {
-        const data = await fetchProblem(code);
-        if (data && data.code) {
-          setProblem(data);
-        }
-      } catch {
-        // Fallback to default problem
+        const data = await api.getProblem(code);
+        setProblem(data);
+      } catch (err) {
+        console.error('Failed to load problem:', err);
+      } finally {
+        setLoading(false);
       }
     }
     load();
@@ -218,153 +69,220 @@ export function ProblemDetailPage(): JSX.Element {
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);
-    if (!sourceCode || Object.values(DEFAULT_CODE_SNIPPETS).includes(sourceCode)) {
-      setSourceCode(DEFAULT_CODE_SNIPPETS[lang] || '');
+    if (!sourceCode || Object.values(DEFAULT_SNIPPETS).includes(sourceCode)) {
+      setSourceCode(DEFAULT_SNIPPETS[lang] || '');
     }
   };
 
-  const { lastPacket } = useLiveWebSocket(latestSubmission?.id);
-
-  useEffect(() => {
-    if (lastPacket && latestSubmission && lastPacket.submission_id === latestSubmission.id) {
-      setLatestSubmission((prev) =>
-        prev
-          ? {
-              ...prev,
-              verdict: lastPacket.verdict || prev.verdict,
-              score: lastPacket.score ?? prev.score,
-            }
-          : null
-      );
-    }
-  }, [lastPacket, latestSubmission]);
-
   const handleSubmit = async () => {
+    if (!sourceCode.trim()) return;
     setIsSubmitting(true);
     try {
-      const res = await submitSolution({
-        problem_id: problem.id,
+      const res = await api.submitProblem({
+        problem_code: code,
         language,
         source_code: sourceCode,
       });
       setLatestSubmission(res);
-      // Logic: Optionally navigate to submission detail or show live overlay
-    } catch {
-      // Create local simulated submission representation if offline
-      const mockSub: Submission = {
-        id: Math.floor(Math.random() * 9000) + 1000,
-        problem_id: problem.id,
-        user_id: 1,
-        language,
-        source_code: sourceCode,
-        verdict: 'AC',
-        score: problem.points,
-        created_at: new Date().toISOString(),
-        problem_code: problem.code,
-        problem_title: problem.title,
-        username: 'admin',
-      };
-      setLatestSubmission(mockSub);
+      if (res && res.submission_id) {
+        navigate(`/submission/${res.submission_id}`);
+      }
+    } catch (err) {
+      console.error('Submission failed:', err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const copySample = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedSample(true);
-    setTimeout(() => setCopiedSample(false), 2000);
-  };
+  if (loading) {
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: '#64748b' }}>
+        <i className="fa fa-spinner fa-spin fa-2x"></i>
+        <p style={{ marginTop: '12px' }}>Đang tải bài tập...</p>
+      </div>
+    );
+  }
+
+  if (!problem) {
+    return (
+      <div style={{ padding: '60px', textAlign: 'center', color: '#ef4444' }}>
+        <h2>Không tìm thấy bài tập</h2>
+        <Link to="/problems" style={{ color: '#0066ff' }}>&larr; Quay lại danh sách bài</Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {/* Problem Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-zinc-800 pb-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <span className="font-mono text-sm font-bold text-blue-400 bg-blue-950/60 border border-blue-800/40 px-2.5 py-0.5 rounded">
-              {problem.code.toUpperCase()}
-            </span>
-            <h1 className="text-2xl font-bold tracking-tight text-white">{problem.title}</h1>
-          </div>
-          <div className="mt-2 flex flex-wrap items-center gap-3 font-mono text-xs text-zinc-400">
-            <span className="rounded bg-zinc-900 border border-zinc-800 px-2 py-0.5">
-              Time: {(problem.time_limit / 1000).toFixed(1)}s
-            </span>
-            <span className="rounded bg-zinc-900 border border-zinc-800 px-2 py-0.5">
-              Memory: {problem.memory_limit} MB
-            </span>
-            <span className="rounded bg-zinc-900 border border-zinc-800 px-2 py-0.5 text-zinc-200 font-semibold">
-              Points: {problem.points}
-            </span>
-          </div>
-        </div>
+    <>
+      <div className="problem-title">
+        <h2 style={{ display: 'inline-block', margin: 0, fontSize: '24px', fontWeight: 800 }}>
+          [{problem.code}] - {problem.name}
+        </h2>
+        <span className="spacer"></span>
+        <a id="pdf_button" className="view-pdf" href="#" onClick={(e) => e.preventDefault()}>
+          <span className="pdf-icon">
+            <span className="fa fa-file-pdf-o pdf-icon-logo"></span>
+            <span className="pdf-icon-bar"></span>
+          </span>
+          Xem dạng PDF
+        </a>
+      </div>
+      <hr style={{ margin: '14px 0 20px 0' }} />
 
-        {latestSubmission && (
-          <div className="flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/90 p-3">
-            <div className="text-xs text-zinc-400">
-              <div>Submission #{latestSubmission.id}</div>
-              <div className="font-mono text-zinc-300">Score: {latestSubmission.score ?? 0}/{problem.points}</div>
+      <div id="content-body">
+        <div id="common-content" style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
+          {/* Left Column: Problem statement & submission box */}
+          <div id="content-left" className="split-common-content" style={{ flex: 1, minWidth: 0 }}>
+            {/* Statement card */}
+            <div className="content content-description screen" style={{ marginBottom: '24px' }}>
+              <ProblemStatement content={problem.description} />
             </div>
-            <VerdictBadge verdict={latestSubmission.verdict} size="md" />
-            <button
-              onClick={() => navigate(`/submission/${latestSubmission.id}`)}
-              className="rounded bg-zinc-800 px-2.5 py-1 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white"
+
+            {/* Submission feedback banner if present */}
+            {latestSubmission && (
+              <div
+                style={{
+                  marginBottom: '20px',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: 'rgba(0, 102, 255, 0.08)',
+                  border: '1px solid #bfdbfe',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '15px' }}>
+                    Bài nộp #{latestSubmission.submission_id || latestSubmission.id}
+                  </div>
+                  <div style={{ fontSize: '13px', color: '#64748b' }}>
+                    Trạng thái: {latestSubmission.status}
+                  </div>
+                </div>
+                <Link
+                  to={`/submission/${latestSubmission.submission_id || latestSubmission.id}`}
+                  style={{
+                    background: '#0066ff',
+                    color: '#fff',
+                    padding: '6px 14px',
+                    borderRadius: '8px',
+                    textDecoration: 'none',
+                    fontWeight: 600,
+                    fontSize: '13px',
+                  }}
+                >
+                  Xem kết quả &rarr;
+                </Link>
+              </div>
+            )}
+
+            {/* Code Editor submission card */}
+            <div
+              style={{
+                background: 'var(--card-bg, #ffffff)',
+                border: '1px solid #edf2f7',
+                borderRadius: '16px',
+                padding: '20px',
+                boxShadow: '0 4px 20px -2px rgba(0,0,0,0.04)',
+              }}
             >
-              Details &rarr;
-            </button>
+              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 16px 0', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <i className="fa fa-code" style={{ marginRight: '8px', color: '#0066ff' }}></i>
+                Nộp bài giải
+              </h3>
+              <CodeEditor
+                code={sourceCode}
+                onChange={setSourceCode}
+                language={language}
+                onLanguageChange={handleLanguageChange}
+                onSubmit={handleSubmit}
+                isSubmitting={isSubmitting}
+              />
+            </div>
           </div>
-        )}
-      </div>
 
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left Column: Problem Statement & Samples */}
-        <div className="space-y-6 rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 overflow-hidden">
-          <ProblemStatement content={problem.description} />
-
-          {/* Sample I/O */}
-          <div className="space-y-4 pt-4 border-t border-zinc-800">
-            <h3 className="font-mono text-sm font-semibold uppercase tracking-wider text-zinc-400">
-              Sample Test Cases
-            </h3>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-800/80">
-                  <span className="font-mono text-xs font-semibold text-zinc-400">Sample Input 1</span>
-                  <button
-                    onClick={() => copySample('1 2')}
-                    className="font-mono text-xs text-zinc-500 hover:text-zinc-300"
-                  >
-                    {copiedSample ? 'Copied!' : 'Copy'}
-                  </button>
-                </div>
-                <pre className="font-mono text-xs text-zinc-200">1 2</pre>
+          {/* Right Column: Problem Metadata Sidebar */}
+          <div id="content-right" style={{ width: '300px', flexShrink: 0 }}>
+            <div className="info-float">
+              <div style={{ marginBottom: '6px' }}>
+                <Link to={`/submissions?problem=${problem.code}`} style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 600, fontSize: '14px' }}>
+                  Danh sách bài nộp
+                </Link>
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <Link to={`/submissions?problem=${problem.code}`} style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 600, fontSize: '14px' }}>
+                  Bài nộp tốt nhất
+                </Link>
               </div>
 
-              <div className="rounded-lg border border-zinc-800 bg-zinc-950 p-3">
-                <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-800/80">
-                  <span className="font-mono text-xs font-semibold text-zinc-400">Sample Output 1</span>
+              <hr style={{ paddingTop: '0.3em', margin: '12px 0' }} />
+
+              <div className="problem-info-entry">
+                <span className="pi-name">
+                  <i className="fa fa-check fa-fw" style={{ color: '#10b981', marginRight: '6px' }}></i> Điểm:
+                </span>
+                <span className="pi-value">
+                  {problem.points ? problem.points.toFixed(2) : '100.00'} (OI)
+                </span>
+              </div>
+
+              <div className="problem-info-entry">
+                <span className="pi-name">
+                  <i className="fa fa-clock-o fa-fw" style={{ color: '#f59e0b', marginRight: '6px' }}></i> Giới hạn thời gian:
+                </span>
+                <span className="pi-value">{problem.time_limit}s</span>
+              </div>
+
+              <div className="problem-info-entry">
+                <span className="pi-name">
+                  <i className="fa fa-server fa-fw" style={{ color: '#8b5cf6', marginRight: '6px' }}></i> Giới hạn bộ nhớ:
+                </span>
+                <span className="pi-value">{problem.memory_limit}M</span>
+              </div>
+
+              <div className="problem-info-entry">
+                <span className="pi-name">
+                  <i className="fa fa-keyboard-o fa-fw" style={{ color: '#64748b', marginRight: '6px' }}></i> Input:
+                </span>
+                <span className="pi-value">
+                  <i>standard input</i>
+                </span>
+              </div>
+
+              <div className="problem-info-entry">
+                <span className="pi-name">
+                  <i className="fa fa-print fa-fw" style={{ color: '#64748b', marginRight: '6px' }}></i> Output:
+                </span>
+                <span className="pi-value">
+                  <i>standard output</i>
+                </span>
+              </div>
+
+              <hr style={{ paddingTop: '0.7em', margin: '12px 0' }} />
+
+              <div className="problem-info-entry">
+                <span className="pi-name">
+                  <i className="fa fa-pencil-square-o fa-fw" style={{ color: '#ec4899', marginRight: '6px' }}></i> Tác giả:
+                </span>
+                <div className="pi-value authors-value">
+                  <span className="rating rate-none admin">
+                    <Link to="/user/admin" style={{ color: '#0066ff', textDecoration: 'none', fontWeight: 600 }}>
+                      admin
+                    </Link>
+                  </span>
                 </div>
-                <pre className="font-mono text-xs text-zinc-200">3</pre>
+              </div>
+
+              <div id="problem-types" style={{ marginTop: '16px' }}>
+                <div className="toggle closed unselectable" style={{ fontSize: '13px', color: '#64748b', cursor: 'pointer' }}>
+                  <i className="fa fa-chevron-right fa-fw"></i> Dạng bài: Thuật toán &amp; Cấu trúc dữ liệu
+                </div>
               </div>
             </div>
           </div>
         </div>
-
-        {/* Right Column: Code Editor */}
-        <div className="space-y-4">
-          <CodeEditor
-            code={sourceCode}
-            onChange={setSourceCode}
-            language={language}
-            onLanguageChange={handleLanguageChange}
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-          />
-        </div>
       </div>
-    </div>
+    </>
   );
 }

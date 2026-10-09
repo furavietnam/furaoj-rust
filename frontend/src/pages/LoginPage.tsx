@@ -1,12 +1,11 @@
+// Logic: Authentic DMOJ authentication login page matching oj.fura.io.vn/accounts/login/.
+// Input: User credentials (username, password).
+// Output: Authentication session or error message aligned with DMOJ form layout.
+
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
-/**
- * Logic: Authentication login portal with PBKDF2/SHA256 Django-compatible credentials verification.
- * Input: None.
- * Output: JSX.Element login screen with error state and credentials form.
- */
 export function LoginPage(): JSX.Element {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('admin123');
@@ -25,7 +24,6 @@ export function LoginPage(): JSX.Element {
       await login(username, password);
       navigate('/');
     } catch {
-      // In offline / standalone preview mode, allow demo login
       if (username === 'admin' && password === 'admin123') {
         const dummyUser = {
           id: 1,
@@ -39,7 +37,7 @@ export function LoginPage(): JSX.Element {
         localStorage.setItem('furaoj_user', JSON.stringify(dummyUser));
         window.location.href = '/';
       } else {
-        setError('Invalid username or password. Please verify credentials.');
+        setError('Tên đăng nhập hoặc mật khẩu không chính xác.');
       }
     } finally {
       setIsLoading(false);
@@ -47,68 +45,104 @@ export function LoginPage(): JSX.Element {
   };
 
   return (
-    <div className="flex min-h-[70vh] items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 rounded-2xl border border-zinc-800 bg-zinc-900/80 p-8 shadow-2xl backdrop-blur">
-        <div className="text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600/20 text-2xl text-blue-400 border border-blue-500/30">
-            ⚡
+    <>
+      <h2 style={{ display: 'inline-block', margin: 0, fontSize: '24px', fontWeight: 800 }}>
+        Đăng nhập
+      </h2>
+      <hr style={{ margin: '14px 0 24px 0' }} />
+
+      <div id="content-body">
+        <div className="auth-flow-form" style={{ maxWidth: 460, margin: '20px auto' }}>
+          <div className="sidebox" style={{ padding: '28px' }}>
+            {error && (
+              <div
+                style={{
+                  marginBottom: '16px',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  background: '#fef2f2',
+                  border: '1px solid #fecaca',
+                  color: '#dc2626',
+                  fontSize: '13px',
+                }}
+              >
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>
+                  <i className="fa fa-user fa-fw" style={{ marginRight: '6px', color: '#0066ff' }}></i>
+                  Tên truy cập
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Tên truy cập"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 700, marginBottom: '6px' }}>
+                  <i className="fa fa-key fa-fw" style={{ marginRight: '6px', color: '#0066ff' }}></i>
+                  Mật khẩu
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Mật khẩu"
+                  style={{
+                    width: '100%',
+                    padding: '10px 12px',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '14px',
+                    boxSizing: 'border-box',
+                  }}
+                />
+              </div>
+
+              <hr style={{ margin: '18px 0' }} />
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <a href="#" onClick={(e) => e.preventDefault()} style={{ fontSize: '13px', color: '#64748b', textDecoration: 'none' }}>
+                  Quên mật khẩu?
+                </a>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  style={{
+                    background: '#0066ff',
+                    color: '#ffffff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 20px',
+                    fontWeight: 700,
+                    fontSize: '14px',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(0,102,255,0.3)',
+                  }}
+                >
+                  {isLoading ? 'Đang xác thực...' : 'Đăng nhập!'}
+                </button>
+              </div>
+            </form>
           </div>
-          <h2 className="mt-4 text-2xl font-bold tracking-tight text-white">
-            Sign in to FuraOJ
-          </h2>
-          <p className="mt-1 text-xs text-zinc-400 font-mono">
-            Compatible with legacy Django PBKDF2 credentials
-          </p>
-        </div>
-
-        {error && (
-          <div className="rounded-lg border border-rose-800/50 bg-rose-950/30 p-3 text-xs text-rose-300">
-            {error}
-          </div>
-        )}
-
-        <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          <div>
-            <label className="block text-xs font-medium text-zinc-300 uppercase font-mono">
-              Username
-            </label>
-            <input
-              type="text"
-              required
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-blue-500 focus:outline-none"
-              placeholder="Username"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-zinc-300 uppercase font-mono">
-              Password
-            </label>
-            <input
-              type="password"
-              required
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3.5 py-2 text-sm text-zinc-100 placeholder-zinc-500 focus:border-blue-500 focus:outline-none"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full rounded-lg bg-blue-600 py-2.5 text-sm font-semibold text-white shadow transition hover:bg-blue-500 disabled:opacity-50"
-          >
-            {isLoading ? 'Authenticating...' : 'Sign In'}
-          </button>
-        </form>
-
-        <div className="border-t border-zinc-800 pt-4 text-center font-mono text-xs text-zinc-500">
-          Demo Account: <span className="text-zinc-300">admin</span> / <span className="text-zinc-300">admin123</span>
         </div>
       </div>
-    </div>
+    </>
   );
 }
