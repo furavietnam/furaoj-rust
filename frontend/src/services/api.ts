@@ -173,6 +173,9 @@ export const api = {
   getJudges: () => apiClient.get('/judges').then((r) => r.data),
   getLanguages: () => apiClient.get('/languages').then((r) => r.data),
   getAdminStats: () => apiClient.get('/admin/stats').then((r) => r.data),
+  createProblem: (data: any) => apiClient.post('/problems', data).then((r) => r.data),
+  registerJudge: (data: any) => apiClient.post('/admin/judges', data).then((r) => r.data),
+  rejudgeSubmission: (id: number) => apiClient.post(`/submission/${id}/rejudge`).then((r) => r.data),
 };
 
 export default apiClient;

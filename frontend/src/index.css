@@ -1,4 +1,5 @@
 @import "./dmoj.css";
+@import "./wpadmin.css";
 @import 'katex/dist/katex.min.css';
 
 @tailwind base;
