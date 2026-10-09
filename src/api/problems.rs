@@ -13,7 +13,10 @@ use std::sync::Arc;
 
 use crate::auth::verify_jwt_token;
 use crate::bridge::DispatchJob;
-use crate::models::{DbProblem, ProblemDetail, ProblemListItem, SubmitProblemRequest, SubmitResponse};
+use crate::models::{
+    CreateProblemRequest, DbProblem, ProblemDetail, ProblemListItem, SubmitProblemRequest,
+    SubmitResponse,
+};
 use crate::state::AppState;
 use crate::ws::LiveEvent;
 
@@ -183,6 +186,60 @@ pub async fn submit_problem_handler(
         Json(SubmitResponse {
             submission_id: sub_id,
             status: "QU".to_string(),
+        }),
+    ))
+}
+
+// Logic: Creates or updates a competitive problem record in the database for evaluation.
+// Input: State(state): State<Arc<AppState>>, Json(payload): Json<CreateProblemRequest>.
+// Output: Result<(StatusCode, Json<ProblemDetail>), (StatusCode, Json<serde_json::Value>)>.
+pub async fn create_problem_handler(
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<CreateProblemRequest>,
+) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
+    let clean_code = payload.code.trim().to_lowercase();
+    if clean_code.is_empty() || payload.name.trim().is_empty() {
+        return Err((
+            StatusCode::BAD_REQUEST,
+            Json(json!({"error": "Problem code and name are required"})),
+        ));
+    }
+
+    let problem: DbProblem = sqlx::query_as(
+        r#"
+        INSERT INTO judge_problem (code, name, description, time_limit, memory_limit, points, is_public, is_manually_managed, date_added)
+        VALUES ($1, $2, $3, $4, $5, $6, true, false, NOW())
+        ON CONFLICT (code) DO UPDATE
+        SET name = EXCLUDED.name,
+            description = EXCLUDED.description,
+            time_limit = EXCLUDED.time_limit,
+            memory_limit = EXCLUDED.memory_limit,
+            points = EXCLUDED.points
+        RETURNING id, code, name, description, time_limit, memory_limit, points, is_public, is_manually_managed, date_added
+        "#
+    )
+    .bind(&clean_code)
+    .bind(payload.name.trim())
+    .bind(&payload.description)
+    .bind(payload.time_limit)
+    .bind(payload.memory_limit)
+    .bind(payload.points)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"error": e.to_string()}))))?;
+
+    Ok((
+        StatusCode::CREATED,
+        Json(ProblemDetail {
+            id: problem.id,
+            code: problem.code,
+            name: problem.name,
+            description: problem.description,
+            time_limit: problem.time_limit,
+            memory_limit: problem.memory_limit,
+            points: problem.points,
+            is_public: problem.is_public,
+            date_added: problem.date_added,
         }),
     ))
 }

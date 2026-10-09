@@ -37,7 +37,10 @@ pub fn create_router(state: Arc<AppState>) -> Router {
         .route("/auth/register", post(auth::register_handler))
         .route("/auth/me", get(auth::current_user_handler))
         // Problem routes
-        .route("/problems", get(problems::list_problems_handler))
+        .route(
+            "/problems",
+            get(problems::list_problems_handler).post(problems::create_problem_handler),
+        )
         .route("/problem/:code", get(problems::get_problem_handler))
         .route("/problem/:code/submit", post(problems::submit_problem_handler))
         // Submission routes
